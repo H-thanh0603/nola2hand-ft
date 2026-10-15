@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nola2Hand — Giao diện Quản trị (từ file Figma)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#23a336; --green-dark:#17802a; --green-deep:#0e5c1e; --green-soft:#e9f8ec; --green-softer:#f3fbf4;
+  --ink:#17211a; --mut:#68746c; --line:#e6eae7; --bg:#f2f5f3; --card:#ffffff;
+  --amber:#d97706; --amber-soft:#fef3e2; --red:#dc2626; --red-soft:#fdecec; --blue:#1d6fe0; --blue-soft:#e8f1fd;
+  --dark:#0d1f12; --dark2:#142a19;
+  --sh:0 1px 2px rgba(18,42,24,.06),0 4px 14px rgba(18,42,24,.06);
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:#e8ede9;color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+/* ===== Prototype chrome ===== */
+.proto{display:flex;min-height:100vh}
+.proto-nav{width:272px;background:var(--dark);color:#cfe0d3;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 14px;flex-shrink:0;z-index:50}
+.proto-nav .brand{font-weight:800;font-size:18px;margin:0 8px 2px;color:#fff}
+.proto-nav .brand .g{color:var(--green)}
+.proto-nav .sub{font-size:11px;color:#8fa598;margin:0 8px 14px}
+.proto-nav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#7d9484;margin:18px 8px 6px;font-weight:700;display:flex;align-items:center;gap:6px}
+.proto-nav button{display:flex;width:100%;text-align:left;background:none;border:0;color:#c6d8cb;font-family:inherit;font-size:12.8px;padding:7.5px 10px;border-radius:8px;cursor:pointer;align-items:center;gap:8px}
+.proto-nav button:hover{background:#1b2b20;color:#fff}
+.proto-nav button.on{background:var(--green);color:#fff;font-weight:600}
+.proto-nav .n{margin-left:auto;background:#2a3d30;color:#9fb3a5;font-size:10px;border-radius:10px;padding:1px 7px}
+.proto-main{flex:1;min-width:0}
+.stage{width:100%}
+.screen{display:none;background:#fff;overflow:hidden;min-height:100vh}
+.screen.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.screen-tag{background:var(--dark);color:#bfe6c4;font-size:12px;padding:9px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.screen-tag b{color:#fff}
+.role-chip{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.02em}
+.rc-buy{background:#dcf5df;color:#146c1f}.rc-sell{background:#e0edff;color:#1d4ed8}.rc-fin{background:#f3e8ff;color:#7c3aed}.rc-content{background:#fef3e2;color:#b45309}
+/* ===== atoms ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;font-family:inherit;font-weight:600;cursor:pointer;font-size:14px;padding:12px 22px;text-decoration:none;transition:.15s}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 6px 16px rgba(35,163,54,.3)}
+.btn-line{background:#fff;color:var(--ink);border:1.5px solid var(--line)}.btn-line:hover{border-color:var(--green);color:var(--green-dark)}
+.btn-dark{background:var(--ink);color:#fff}.btn-red{background:var(--red);color:#fff}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.b-green{background:#dcf5df;color:#146c1f}.b-amber{background:var(--amber-soft);color:var(--amber)}.b-red{background:var(--red-soft);color:var(--red)}.b-blue{background:var(--blue-soft);color:var(--blue)}.b-gray{background:#eef1ef;color:#4b5563}.b-purple{background:#f3e8ff;color:#7c3aed}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.muted{color:var(--mut)}
+.price{color:var(--ink);font-weight:700}
+.input,select.input,textarea.input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);transition:.15s}
+.input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+label.lbl{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+.pill{font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap}
+.p-ok{background:#dcf5df;color:#146c1f}.p-warn{background:var(--amber-soft);color:var(--amber)}.p-bad{background:var(--red-soft);color:var(--red)}.p-info{background:var(--blue-soft);color:var(--blue)}.p-mut{background:#eef1ef;color:#4b5563}.p-purple{background:#f3e8ff;color:#7c3aed}
+.link{color:var(--blue);text-decoration:none;font-weight:600;font-size:12.5px}.link:hover{text-decoration:underline}
+/* ===== USER header (3-tier) ===== */
+.u-topbar{background:var(--dark);color:#a9c2b0;font-size:11.8px;padding:7px 32px;display:flex;justify-content:space-between;align-items:center}
+.u-topbar a{color:#c9dccf;text-decoration:none;margin-left:16px}.u-topbar a:hover{color:#fff}
+.u-topbar .l a{margin:0 16px 0 0}
+.u-header{background:#fff;padding:14px 32px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(15,40,22,.07)}
+.u-logo{font-weight:800;font-size:23px;letter-spacing:-.5px;white-space:nowrap;cursor:pointer}
+.u-logo .g{color:var(--green)}
+.u-loc{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);border:1px solid var(--line);border-radius:24px;padding:7px 14px;white-space:nowrap;cursor:pointer}
+.u-loc:hover{border-color:var(--green)}
+.u-search{flex:1;display:flex;background:#f4f7f4;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;transition:.15s}
+.u-search:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);background:#fff}
+.u-search select{border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--mut);padding:0 10px;border-right:1px solid var(--line);cursor:pointer;max-width:150px}
+.u-search input{flex:1;border:0;background:transparent;padding:12px 14px;font-family:inherit;font-size:14px;outline:none}
+.u-search button{background:var(--green);color:#fff;border:0;padding:0 26px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.u-search button:hover{background:var(--green-dark)}
+.u-actions{display:flex;gap:6px;align-items:center}
+.u-act{position:relative;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;border:1px solid transparent;background:none}
+.u-act:hover{background:var(--green-softer);border-color:var(--line)}
+.u-act .dot{position:absolute;top:6px;right:6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.u-account{display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border:1.5px solid var(--line);border-radius:26px;cursor:pointer;background:#fff}
+.u-account:hover{border-color:var(--green)}
+.u-account img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.u-account .nm{font-size:12.5px;font-weight:600;line-height:1.2}.u-account .nm small{display:block;font-weight:400;color:var(--mut);font-size:10.5px}
+.u-catnav{background:#fff;border-top:1px solid var(--line);padding:0 32px;display:flex;gap:4px;overflow-x:auto;position:sticky;top:70px;z-index:29}
+.u-catnav a{font-size:12.8px;font-weight:500;color:#3c463f;text-decoration:none;padding:11px 13px;white-space:nowrap;border-bottom:2.5px solid transparent}
+.u-catnav a:hover{color:var(--green-dark);border-color:var(--green)}
+.u-catnav a.hot{color:var(--red);font-weight:700}
+/* ===== USER footer ===== */
+.u-footer{background:var(--dark);color:#a9c2b0;margin-top:0}
+.u-foot-main{max-width:1180px;margin:0 auto;padding:44px 32px 8px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1.2fr;gap:28px}
+.u-foot-main h4{color:#fff;font-size:13px;margin-bottom:12px;letter-spacing:.03em}
+.u-foot-main a{color:#93ad99;text-decoration:none;display:block;margin:7px 0;font-size:12.8px}
+.u-foot-main a:hover{color:#fff}
+.u-foot-brand{font-weight:800;font-size:22px;color:#fff;margin-bottom:10px}.u-foot-brand .g{color:var(--green)}
+.u-foot-main p{font-size:12.5px;line-height:1.7}
+.u-social{display:flex;gap:8px;margin-top:14px}
+.u-social span{width:34px;height:34px;border-radius:10px;background:#1c3122;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer}
+.u-social span:hover{background:var(--green)}
+.u-appbtn{display:flex;gap:8px;margin-top:10px}
+.u-appbtn .ab{background:#1c3122;border-radius:10px;padding:8px 12px;font-size:11px;cursor:pointer}
+.u-appbtn .ab b{display:block;font-size:12.5px;color:#fff}
+.u-pay{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.u-pay span{background:#1c3122;font-size:10px;font-weight:700;color:#c9dccf;border-radius:6px;padding:5px 9px}
+.u-foot-cert{max-width:1180px;margin:22px auto 0;padding:16px 32px 0;border-top:1px solid #1e3325;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:11.8px;align-items:center}
+.u-foot-copy{max-width:1180px;margin:0 auto;padding:14px 32px 22px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11.8px;color:#7d9484}
+/* ===== ADMIN shell ===== */
+.a-shell{display:flex;min-height:100vh}
+.a-side{width:236px;background:var(--dark);color:#c6d8cb;padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column}
+.a-logo{font-weight:800;font-size:18px;color:#fff;margin:0 10px 4px}.a-logo .g{color:var(--green)}
+.a-role{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;margin:0 10px 18px;padding:5px 11px;border-radius:20px;width:fit-content}
+.a-role.fin{background:#2a2140;color:#c4b5fd}.a-role.content{background:#3a2c14;color:#fcd34d}.a-role.seller{background:#123a5c;color:#93c5fd}
+.a-navsec{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#7d9484;font-weight:700;margin:14px 10px 6px}
+.a-side a.anav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#b9cdc0;text-decoration:none;font-size:13.2px;font-weight:500;margin-bottom:2px}
+.a-side a.anav:hover{background:#1b2b20;color:#fff}
+.a-side a.anav.on{background:var(--green);color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(35,163,54,.35)}
+.a-side a.anav .ic{width:20px;text-align:center}
+.a-admincard{margin-top:auto;background:#1c3122;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center}
+.a-admincard img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.a-admincard .nm{font-size:12.5px;font-weight:600;color:#fff}.a-admincard .rl{font-size:10.5px;color:#8fa598}
+.a-body{flex:1;background:var(--bg);min-width:0;display:flex;flex-direction:column}
+.a-topbar{background:#fff;border-bottom:1px solid var(--line);padding:13px 26px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20}
+.a-topbar .crumb{font-size:12px;color:var(--mut)}
+.a-topbar h2{font-size:17px}
+.a-topbar .sp{flex:1}
+.a-search{display:flex;align-items:center;background:#f4f7f4;border:1px solid var(--line);border-radius:10px;padding:8px 12px;gap:8px;min-width:230px}
+.a-search input{border:0;background:none;outline:none;font-family:inherit;font-size:13px;width:100%}
+.a-bell{position:relative;width:38px;height:38px;border-radius:10px;background:#f4f7f4;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer}
+.a-bell .dot{position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid #fff}
+.a-content{padding:24px 26px}
+.a-pagehead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.a-pagehead h1{font-size:21px;letter-spacing:-.3px}
+.a-pagehead .desc{color:var(--mut);font-size:13px;margin-top:3px}
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--sh);display:flex;gap:14px;align-items:flex-start;transition:.15s}
+.stat:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(18,42,24,.1)}
+.stat .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.stat .t{font-size:12px;color:var(--mut);font-weight:500}
+.stat .v{font-size:23px;font-weight:800;letter-spacing:-.5px;margin-top:2px}
+.stat .tr{font-size:11px;font-weight:600;margin-top:2px}
+.tr-up{color:var(--green-dark)}.tr-down{color:var(--red)}
+.sect{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:var(--sh)}
+.sect h2{font-size:15.5px;margin-bottom:4px}
+.tblwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--sh)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f7faf7;text-align:left;padding:12px 16px;color:var(--mut);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:13px 16px;border-bottom:1px solid #f0f3f1;vertical-align:middle}
+.tbl tbody tr{transition:.12s}.tbl tbody tr:hover{background:var(--green-softer)}
+.tbl tr:last-child td{border-bottom:0}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.toolbar .input{width:auto;min-width:190px;padding:9px 13px;font-size:13px}
+.chip-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.chip-tabs .badge{padding:8px 16px;font-size:12px;cursor:pointer;border:1.5px solid transparent}
+.chip-tabs .badge.b-gray:hover{border-color:var(--green)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+/* buyer content helpers */
+.wrap{padding:24px 40px}
+.crumbs{font-size:12.5px;color:var(--mut);margin-bottom:14px}
+.crumbs a{color:var(--blue);text-decoration:none;font-weight:500}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:.18s;cursor:pointer;box-shadow:var(--sh)}
+.pcard:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(18,42,24,.13)}
+.pcard img.ph{width:100%;height:190px;object-fit:cover;display:block}
+.pcard .pb{padding:14px 16px}
+.hero{background:linear-gradient(115deg,#eafbea 0%,#f7fdf4 60%,#fff8e8 100%);padding:46px 48px;display:flex;gap:32px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
+.hero h1{font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1.15}
+.hero h1 .hl{color:var(--green-dark)}
+.catgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.catcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 8px;text-align:center;font-size:12px;font-weight:500;cursor:pointer;transition:.15s;box-shadow:var(--sh)}
+.catcard:hover{border-color:var(--green);transform:translateY(-3px)}
+.catcard .e{font-size:28px;display:block;margin-bottom:8px}
+@media(max-width:1000px){.stat-grid{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}.pgrid{grid-template-columns:repeat(2,1fr)}.catgrid{grid-template-columns:repeat(3,1fr)}.proto-nav{display:none}.u-catnav{display:none}.u-foot-main{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="proto">
+<main class="proto-main"><div class="stage">
+<script>window.ROLE_SWITCH=true;</script>
+<script>
+/* ===== Shared user header / footer (redesigned) ===== */
+const AVATAR_URL = "data:image/jpeg;base64,/9j/2wBDAAgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/2wBDAQgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/wgARCABAAEADASIAAhEBAxEB/8QAHAAAAgICAwAAAAAAAAAAAAAABgcFCAADAQIE/8QAGQEBAAMBAQAAAAAAAAAAAAAAAgABAwQF/9oADAMBAAIQAxAAAAB/5mqTxCPAXmzY1rm77hNzHSLGnppyFcyMNJ8PoiRyAGDJJPDch18PmFGVXOD3ESafOrBh04TVSwBPVO4xqXrrYvirpm/tcn04rZOvmSDXVpevbF//xAAzEAACAQQABAMGAwkAAAAAAAABAgMABAURBhIhURMUMQcQIkFhcTJCUyMzQ1JicoKSsf/aAAgBAQABPwCjoDZNSZJAxWFeb+o+lZbj/FYp2hlnd5R6pCtYHj3GZ2c21vLIs4UsI5VHUDtUd2hIEi6+ooEEbB987llbto1lrma2xWQmhG5EhYp9z0oez6w8pFLfTTSTsgL6bQBNXeCOEdr/AA8ksd1AC6k9dj5jRrGXEl3jbG5lAEk1vHIwHQbZQTVtdNA2vVD6j3TtyoB3NP8Agb7GvOXE00Vu2uSWVkbp1IHWr23unybHzQWARsxjBO/pUdvPI7XD3IcMGV1JO/iFY1rmPE2zGY/BBGAmh0AFQ3BcDmrF3ZdJYiesbdPsavZljUc3oCK8YPEWHQEHVXUclq9rK8LN+2ZwFPapVW4hnutkeKg2hI66+pq1SOG60xBAfmZdjQC/KseJALrQOp35tE/g+gqFCoArFNy3Uo7g1xFYzzokluSHGiexAoZgY4NLk7hog2xFGQWJ5e1X/GniTweUiIWPmBeTs30rHZIS462gn+PzFoso7q7E7U/9FZiKOxx1/IWHOImQID1Bca2aw3HeVsOWOZEuYl/m6P8A7VieOsJkTHCDJDcv0Ecg9T2DCsHkXuM3PbNZ6WO2Mhl30JJ0Fq7mjt7aWeQ6SNSzHsBXHGViv8ha+A+4khYD7sd1vlIrEW8DcN4uQxAymziRa4qxQGKjtkkiW4uZht5GCL021X1vLZXUlvLy88eg3KwYbPX1FW901tdQTr1McquP8TuuH/CfHQXij9/Grp/aeooqrKVYAgjRB6gg1x/wld4e/S8gjL4530CP4JP5WqT1rhtxJgsT9LVAK9plwN4q27I8pp33s9+tcAcC3HENzHe3kZTGRvsn9cj8iUiKiKiKAqgAADQAHulSOVGjkVWRgQykbBB+RFZ72W428Ly4q58o52fCYF4qwHDmWxllDaziJ2iTkBjfYri3gTifO5fxII4I4BCkavLLWA9kOKs3SfL3PnpP0VBSGoo4oY0iiRURQFVVGgAPkAPd/8QAHxEAAgMBAAIDAQAAAAAAAAAAAQIAAxExEkEEECEy/9oACAECAQE/AI1gUaZXYrjR9AjkfyG7vZ8c/wBQciIGs6eSyhXrKj8PowVV15WCCc2MM5FPidiup9x3G9hOz//EAB8RAAIDAAICAwAAAAAAAAAAAAECAAMRECEEYSJBUf/aAAgBAwEBPwCJWznBLK2rbG43uUFN6zcnmZqgCfcZc+XuV3GuxWPYjWvaS5HoQQjRGVvyIpzj/9k=";
+const U_HEADER = `
+<div class="u-topbar">
+  <div class="l"><span>📞 Hotline: <b style="color:#fff">1900 6868</b> (8h–21h)</span><a href="#">Trung tâm trợ giúp</a><a href="#">Tải ứng dụng</a></div>
+  <div><a href="#" onclick="go('seller-overview');return false">🏪 Kênh người bán</a><a href="#" onclick="go('login');return false">Đăng nhập</a><a href="#" onclick="go('signup');return false" style="color:#fff;font-weight:700">Đăng ký</a></div>
+</div>
+<header class="u-header">
+  <div class="u-logo" onclick="go('home')"><span class="g">NOLA</span>2HAND</div>
+  <div class="u-loc">📍 <span><b>Bình Dương</b><br><small style="font-size:10px">TP. HCM mới ▾</small></span></div>
+  <div class="u-search">
+    <select><option>Tất cả danh mục</option><option>Điện tử cũ</option><option>Xe cộ</option><option>Thời trang 2Hand</option><option>Nội thất</option><option>Đồ gia dụng</option></select>
+    <input placeholder="Tìm sản phẩm, đồ cũ cần mua... (vd: bàn phím cơ, iPhone 14)">
+    <button>🔍 Tìm kiếm</button>
+  </div>
+  <div class="u-actions">
+    <button class="u-act" title="Thông báo">🔔<span class="dot">3</span></button>
+    <button class="u-act" title="Tin đã lưu" onclick="go('favorites')">🤍<span class="dot">1</span></button>
+    <button class="u-act" title="Giỏ hàng">🛒</button>
+    <button class="u-act" title="Chat" style="font-size:17px">💬<span class="dot">2</span></button>
+    <div class="u-account" onclick="go('profile')"><img src="data:image/jpeg;base64,/9j/2wBDAAgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/2wBDAQgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/wgARCABAAEADASIAAhEBAxEB/8QAHAAAAgICAwAAAAAAAAAAAAAABgcFCAADAQIE/8QAGQEBAAMBAQAAAAAAAAAAAAAAAgABAwQF/9oADAMBAAIQAxAAAAB/5mqTxCPAXmzY1rm77hNzHSLGnppyFcyMNJ8PoiRyAGDJJPDch18PmFGVXOD3ESafOrBh04TVSwBPVO4xqXrrYvirpm/tcn04rZOvmSDXVpevbF//xAAzEAACAQQABAMGAwkAAAAAAAABAgMABAURBhIhURMUMQcQIkFhcTJCUyMzQ1JicoKSsf/aAAgBAQABPwCjoDZNSZJAxWFeb+o+lZbj/FYp2hlnd5R6pCtYHj3GZ2c21vLIs4UsI5VHUDtUd2hIEi6+ooEEbB987llbto1lrma2xWQmhG5EhYp9z0oez6w8pFLfTTSTsgL6bQBNXeCOEdr/AA8ksd1AC6k9dj5jRrGXEl3jbG5lAEk1vHIwHQbZQTVtdNA2vVD6j3TtyoB3NP8Agb7GvOXE00Vu2uSWVkbp1IHWr23unybHzQWARsxjBO/pUdvPI7XD3IcMGV1JO/iFY1rmPE2zGY/BBGAmh0AFQ3BcDmrF3ZdJYiesbdPsavZljUc3oCK8YPEWHQEHVXUclq9rK8LN+2ZwFPapVW4hnutkeKg2hI66+pq1SOG60xBAfmZdjQC/KseJALrQOp35tE/g+gqFCoArFNy3Uo7g1xFYzzokluSHGiexAoZgY4NLk7hog2xFGQWJ5e1X/GniTweUiIWPmBeTs30rHZIS462gn+PzFoso7q7E7U/9FZiKOxx1/IWHOImQID1Bca2aw3HeVsOWOZEuYl/m6P8A7VieOsJkTHCDJDcv0Ecg9T2DCsHkXuM3PbNZ6WO2Mhl30JJ0Fq7mjt7aWeQ6SNSzHsBXHGViv8ha+A+4khYD7sd1vlIrEW8DcN4uQxAymziRa4qxQGKjtkkiW4uZht5GCL021X1vLZXUlvLy88eg3KwYbPX1FW901tdQTr1McquP8TuuH/CfHQXij9/Grp/aeooqrKVYAgjRB6gg1x/wld4e/S8gjL4530CP4JP5WqT1rhtxJgsT9LVAK9plwN4q27I8pp33s9+tcAcC3HENzHe3kZTGRvsn9cj8iUiKiKiKAqgAADQAHulSOVGjkVWRgQykbBB+RFZ72W428Ly4q58o52fCYF4qwHDmWxllDaziJ2iTkBjfYri3gTifO5fxII4I4BCkavLLWA9kOKs3SfL3PnpP0VBSGoo4oY0iiRURQFVVGgAPkAPd/8QAHxEAAgMBAAIDAQAAAAAAAAAAAQIAAxExEkEEECEy/9oACAECAQE/AI1gUaZXYrjR9AjkfyG7vZ8c/wBQciIGs6eSyhXrKj8PowVV15WCCc2MM5FPidiup9x3G9hOz//EAB8RAAIDAAICAwAAAAAAAAAAAAECAAMRECEEYSJBUf/aAAgBAwEBPwCJWznBLK2rbG43uUFN6zcnmZqgCfcZc+XuV3GuxWPYjWvaS5HoQQjRGVvyIpzj/9k=" alt="avatar"><span class="nm">Nguyễn Văn Tuấn<small>Tài khoản ▾</small></span></div>
+  </div>
+</header>
+<nav class="u-catnav">
+  <a href="#" onclick="go('home');return false">📱 Điện thoại & Tablet</a>
+  <a href="#" onclick="go('home');return false">💻 Laptop & PC</a>
+  <a href="#" onclick="go('home');return false">🛵 Xe máy cũ</a>
+  <a href="#" onclick="go('home');return false">👕 Thời trang 2Hand</a>
+  <a href="#" onclick="go('home');return false">🛋️ Nội thất</a>
+  <a href="#" onclick="go('home');return false">🧊 Điện lạnh</a>
+  <a href="#" onclick="go('home');return false">📷 Máy ảnh</a>
+  <a href="#" onclick="go('home');return false">📚 Sách truyện</a>
+  <a href="#" class="hot" onclick="go('home');return false">🔥 Cho tặng 0đ</a>
+  <a href="#" onclick="go('seller-overview');return false">🏪 Bán hàng cùng Nola</a>
+</nav>`;
+const U_FOOTER = `
+<footer class="u-footer">
+  <div class="u-foot-main">
+    <div>
+      <div class="u-foot-brand"><span class="g">NOLA</span>2HAND</div>
+      <p>Sàn thương mại điện tử đồ cũ uy tín hàng đầu Việt Nam.<br>Mua bán nhanh chóng, minh bạch và an toàn với bảo hộ SafePay.</p>
+      <p style="margin-top:10px">📧 hotro@nola2hand.vn<br>📞 CSKH: 1900 6868 (1.000đ/phút)</p>
+      <div class="u-social"><span title="Facebook">f</span><span title="Youtube">▶</span><span title="TikTok">♪</span><span title="Zalo">Z</span></div>
+    </div>
+    <div><h4>VỀ NOLA2HAND</h4><a href="#">Giới thiệu nền tảng</a><a href="#">Quy chế hoạt động</a><a href="#">Chính sách bảo mật</a><a href="#">Giải quyết tranh chấp</a><a href="#">Điều khoản sử dụng</a><a href="#">Tuyển dụng</a></div>
+    <div><h4>HỖ TRỢ KHÁCH HÀNG</h4><a href="#">Trung tâm trợ giúp</a><a href="#">Hướng dẫn mua bán an toàn</a><a href="#">Quy định đăng tin</a><a href="#">Chính sách hoàn tiền</a><a href="#">Liên hệ hỗ trợ</a></div>
+    <div><h4>DANH MỤC NỔI BẬT</h4><a href="#">Điện thoại & Tablet cũ</a><a href="#">Laptop & Máy tính</a><a href="#">Xe máy cũ</a><a href="#">Thời trang 2Hand</a><a href="#">Nội thất gia đình</a><a href="#">Cho tặng đồ cũ 0đ</a></div>
+    <div><h4>TẢI ỨNG DỤNG</h4><p>Trải nghiệm mua bán mượt mà hơn trên điện thoại.</p>
+      <div class="u-appbtn"><div class="ab">Tải trên<b>App Store</b></div><div class="ab">Tải trên<b>Google Play</b></div></div>
+      <h4 style="margin-top:14px">THANH TOÁN AN TOÀN</h4>
+      <div class="u-pay"><span>MoMo</span><span>VietQR</span><span>NAPAS</span><span>Visa</span><span>COD</span><span>SafePay</span></div>
+    </div>
+  </div>
+  <div class="u-foot-cert">
+    <span>✅ Đã đăng ký với Bộ Công Thương</span>
+    <span>🛡️ Bảo hộ SafePay — tiền giữ hộ đến khi nhận hàng & đồng kiểm</span>
+    <span>🚚 NoLa Express — giao siêu tốc nội thành</span>
+  </div>
+  <div class="u-foot-copy"><span>© 2025 NoLa2Hand Việt Nam — Tối giản, Bền vững & Nhanh chóng.</span><span>Điều khoản · Bảo mật · Khiếu nại · Sơ đồ trang</span></div>
+</footer>`;
+/* ===== Admin / Seller shell config ===== */
+const SHELLS = {
+  finance:{role:'ADMIN TÀI CHÍNH',cls:'fin',nav:[['Tổng quan','📊','fin-overview'],['Giao dịch','🧾','fin-txns'],['Phí dịch vụ','💲','fin-fees'],['Tranh chấp & Hoàn tiền','⚖️','fin-disputes'],['Báo cáo doanh thu','📈','fin-revenue']],name:'Minh Anh'},
+  content:{role:'ADMIN NỘI DUNG',cls:'content',nav:[['Tổng quan','📊','content-overview'],['Khuyến mãi','🎟️','promos'],['Banner','🖼️','banners'],['Báo cáo người dùng','🚩','reports']],name:'Thu Hà'},
+  seller:{role:'KÊNH NGƯỜI BÁN',cls:'seller',nav:[['Tổng quan','📊','seller-overview'],['Quản lý tin đăng','📦','seller-listings'],['Quản lý đơn hàng','🛒','seller-orders'],['Quản lý bài viết','📰','seller-posts'],['Ví & Giao dịch','💰','wallet']],name:'Phát Lê Đăng Tuấn'}
+};
+function renderShared(){
+  document.querySelectorAll('[data-uheader]').forEach(el=>{el.innerHTML=U_HEADER.replaceAll('data:image/jpeg;base64,/9j/2wBDAAgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/2wBDAQgICAgJCAkKCgkNDgwODRMREBARExwUFhQWFBwrGx8bGx8bKyYuJSMlLiZENS8vNUROQj5CTl9VVV93cXecnNH/wgARCABAAEADASIAAhEBAxEB/8QAHAAAAgICAwAAAAAAAAAAAAAABgcFCAADAQIE/8QAGQEBAAMBAQAAAAAAAAAAAAAAAgABAwQF/9oADAMBAAIQAxAAAAB/5mqTxCPAXmzY1rm77hNzHSLGnppyFcyMNJ8PoiRyAGDJJPDch18PmFGVXOD3ESafOrBh04TVSwBPVO4xqXrrYvirpm/tcn04rZOvmSDXVpevbF//xAAzEAACAQQABAMGAwkAAAAAAAABAgMABAURBhIhURMUMQcQIkFhcTJCUyMzQ1JicoKSsf/aAAgBAQABPwCjoDZNSZJAxWFeb+o+lZbj/FYp2hlnd5R6pCtYHj3GZ2c21vLIs4UsI5VHUDtUd2hIEi6+ooEEbB987llbto1lrma2xWQmhG5EhYp9z0oez6w8pFLfTTSTsgL6bQBNXeCOEdr/AA8ksd1AC6k9dj5jRrGXEl3jbG5lAEk1vHIwHQbZQTVtdNA2vVD6j3TtyoB3NP8Agb7GvOXE00Vu2uSWVkbp1IHWr23unybHzQWARsxjBO/pUdvPI7XD3IcMGV1JO/iFY1rmPE2zGY/BBGAmh0AFQ3BcDmrF3ZdJYiesbdPsavZljUc3oCK8YPEWHQEHVXUclq9rK8LN+2ZwFPapVW4hnutkeKg2hI66+pq1SOG60xBAfmZdjQC/KseJALrQOp35tE/g+gqFCoArFNy3Uo7g1xFYzzokluSHGiexAoZgY4NLk7hog2xFGQWJ5e1X/GniTweUiIWPmBeTs30rHZIS462gn+PzFoso7q7E7U/9FZiKOxx1/IWHOImQID1Bca2aw3HeVsOWOZEuYl/m6P8A7VieOsJkTHCDJDcv0Ecg9T2DCsHkXuM3PbNZ6WO2Mhl30JJ0Fq7mjt7aWeQ6SNSzHsBXHGViv8ha+A+4khYD7sd1vlIrEW8DcN4uQxAymziRa4qxQGKjtkkiW4uZht5GCL021X1vLZXUlvLy88eg3KwYbPX1FW901tdQTr1McquP8TuuH/CfHQXij9/Grp/aeooqrKVYAgjRB6gg1x/wld4e/S8gjL4530CP4JP5WqT1rhtxJgsT9LVAK9plwN4q27I8pp33s9+tcAcC3HENzHe3kZTGRvsn9cj8iUiKiKiKAqgAADQAHulSOVGjkVWRgQykbBB+RFZ72W428Ly4q58o52fCYF4qwHDmWxllDaziJ2iTkBjfYri3gTifO5fxII4I4BCkavLLWA9kOKs3SfL3PnpP0VBSGoo4oY0iiRURQFVVGgAPkAPd/8QAHxEAAgMBAAIDAQAAAAAAAAAAAQIAAxExEkEEECEy/9oACAECAQE/AI1gUaZXYrjR9AjkfyG7vZ8c/wBQciIGs6eSyhXrKj8PowVV15WCCc2MM5FPidiup9x3G9hOz//EAB8RAAIDAAICAwAAAAAAAAAAAAECAAMRECEEYSJBUf/aAAgBAwEBPwCJWznBLK2rbG43uUFN6zcnmZqgCfcZc+XuV3GuxWPYjWvaS5HoQQjRGVvyIpzj/9k=',AVATAR_URL)});
+  document.querySelectorAll('[data-ufooter]').forEach(el=>{el.innerHTML=U_FOOTER});
+  document.querySelectorAll('[data-shell]').forEach(el=>{
+    const cfg=SHELLS[el.dataset.shell]; if(!cfg) return;
+    const content=el.innerHTML, active=el.dataset.active, title=el.dataset.title||'';
+    const sh=el.dataset.shell;
+    const rs=(window.ROLE_SWITCH&&(sh==='finance'||sh==='content'))?`<div style="display:flex;background:#eef1ef;border-radius:11px;padding:3px;gap:2px">`+
+      `<button onclick="go('fin-overview')" style="border:0;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;${sh==='finance'?'background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);color:var(--ink)':'background:none;color:var(--mut)'}">\uD83D\uDCBC Tài chính</button>`+
+      `<button onclick="go('content-overview')" style="border:0;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;${sh==='content'?'background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);color:var(--ink)':'background:none;color:var(--mut)'}">\uD83C\uDFA8 Nội dung</button></div>`:'';
+
+    const navHtml=cfg.nav.map(([t,ic,key])=>`<a class="anav ${key===active?'on':''}" href="#" onclick="go('${key}');return false"><span class="ic">${ic}</span>${t}</a>`).join('');
+    el.innerHTML=`
+    <aside class="a-side">
+      <div class="a-logo"><span class="g">NOLA</span>2HAND</div>
+      <span class="a-role ${cfg.cls}">${cfg.role}</span>
+      <div class="a-navsec">Quản lý</div>${navHtml}
+      <div class="a-navsec">Tài khoản</div>
+      <a class="anav" href="#" onclick="go('profile');return false"><span class="ic">👤</span>Hồ sơ của tôi</a>
+      <a class="anav" href="#" onclick="go('home');return false"><span class="ic">🏠</span>Về trang mua sắm</a>
+      <div class="a-admincard"><img src="${AVATAR_URL}"><div><div class="nm">${cfg.name}</div><div class="rl">${cfg.role.charAt(0)+cfg.role.slice(1).toLowerCase()}</div></div></div>
+    </aside>
+    <div class="a-body">
+      <div class="a-topbar">
+        <div><div class="crumb">${cfg.role} / ${title}</div><h2>${title}</h2></div>
+        <div class="sp"></div>${rs}
+        <div class="a-search">🔍<input placeholder="Tìm kiếm nhanh..."></div>
+        <div class="a-bell">🔔<span class="dot"></span></div>
+        <img src="${AVATAR_URL}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--green)">
+      </div>
+      <div class="a-content">${content}</div>
+    </div>`;
+  });
+}
+document.addEventListener('DOMContentLoaded',renderShared);
+</script>
+<!-- ============ ADMIN TÀI CHÍNH: TỔNG QUAN ============ -->
+<section class="screen on" id="s-fin-overview">
+<div class="screen-tag"><span><b>Tổng quan tài chính</b> <span class="role-chip rc-fin">ADMIN TÀI CHÍNH</span></span><span>1578 × 986</span></div>
+<div class="a-shell" data-shell="finance" data-active="fin-overview" data-title="Tổng quan">
+  <div class="stat-grid">
+    <div class="stat"><div class="ic" style="background:var(--green-soft)">💰</div><div><div class="t">Doanh thu tháng 9</div><div class="v" style="color:var(--green-dark)">48,2 tr₫</div><div class="tr tr-up">▲ 12% so với tháng trước</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--blue-soft)">🧾</div><div><div class="t">Tổng giao dịch</div><div class="v">1.284</div><div class="tr" style="color:var(--mut)">Trong 30 ngày qua</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--amber-soft)">↩️</div><div><div class="t">Yêu cầu hoàn tiền</div><div class="v" style="color:var(--amber)">23</div><div class="tr" style="color:var(--amber)">5 đang chờ xử lý</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--red-soft)">⚠️</div><div><div class="t">Tranh chấp mở</div><div class="v" style="color:var(--red)">7</div><div class="tr tr-down">Cần xử lý trong 24h</div></div></div>
+  </div>
+  <div class="sect">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>🧾 Giao dịch gần đây</h2><a class="link" href="#" onclick="go('fin-txns');return false">Xem tất cả →</a></div>
+    <div class="tblwrap" style="box-shadow:none"><table class="tbl"><thead><tr><th>Người mua</th><th>Sản phẩm</th><th>Số tiền</th><th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+      <tr><td><b>Lan Nguyễn</b></td><td>Xe đạp Giant</td><td><b>2.400.000₫</b></td><td><span class="pill p-ok">Thành công</span></td><td style="text-align:right"><a class="link" href="#" onclick="go('fin-txns');return false">Chi tiết</a></td></tr>
+      <tr><td><b>Trung Phạm</b></td><td>Sách giáo trình</td><td><b>180.000₫</b></td><td><span class="pill p-warn">Chờ xử lý</span></td><td style="text-align:right"><a class="link" href="#" onclick="go('fin-txns');return false">Chi tiết</a></td></tr>
+      <tr><td><b>Hà Vũ</b></td><td>Laptop Dell</td><td><b>6.500.000₫</b></td><td><span class="pill p-bad">Thất bại</span></td><td style="text-align:right"><a class="link" href="#" onclick="go('fin-txns');return false">Chi tiết</a></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="row2">
+    <div class="sect">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>⚖️ Tranh chấp / Hoàn tiền</h2><a class="link" href="#" onclick="go('fin-disputes');return false">Xem tất cả →</a></div>
+      <div style="display:grid;gap:10px">
+        <div class="card" style="padding:13px 16px;display:flex;gap:12px;align-items:center;box-shadow:none"><span class="badge b-red">#TC-1042</span><div style="flex:1;font-size:13px">Hàng không đúng mô tả<div class="muted" style="font-size:11px">Lan Nguyễn ↔ Đức Anh · 2.400.000₫</div></div><button class="btn btn-green" style="padding:7px 18px;font-size:12px" onclick="go('fin-disputes')">Xử lý</button></div>
+        <div class="card" style="padding:13px 16px;display:flex;gap:12px;align-items:center;box-shadow:none"><span class="badge b-red">#TC-1039</span><div style="flex:1;font-size:13px">Quá hạn hoàn tiền 5 ngày<div class="muted" style="font-size:11px">Hà Vũ ↔ Minh Trí · 6.500.000₫</div></div><button class="btn btn-green" style="padding:7px 18px;font-size:12px" onclick="go('fin-disputes')">Xử lý</button></div>
+      </div>
+    </div>
+    <div class="sect">
+      <h2>💲 Phí dịch vụ</h2>
+      <div style="display:grid;gap:12px;margin-top:14px">
+        <div><label class="lbl">Phí sàn theo % giao dịch</label><div style="display:flex;gap:8px;align-items:center"><input class="input" value="5" style="max-width:120px"><span class="muted">%</span></div></div>
+        <div><label class="lbl">Phí tối thiểu</label><input class="input" value="5.000₫" style="max-width:220px"></div>
+        <div><button class="btn btn-green" style="padding:10px 28px">Lưu thay đổi</button> <a class="link" href="#" onclick="go('fin-fees');return false" style="margin-left:8px">Quản lý chi tiết →</a></div>
+      </div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+        <label class="lbl">📄 Xuất báo cáo doanh thu</label>
+        <div class="muted" style="font-size:12.5px;margin-bottom:12px">Kỳ: 01/09/2026 → 30/09/2026</div>
+        <div style="display:flex;gap:8px"><button class="btn btn-line" style="font-size:13px;padding:10px 20px">Xuất PDF</button><button class="btn btn-line" style="font-size:13px;padding:10px 20px" onclick="go('fin-revenue')">Xem báo cáo</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN TÀI CHÍNH: GIAO DỊCH ============ -->
+<section class="screen" id="s-fin-txns">
+<div class="screen-tag"><span><b>Danh sách giao dịch</b> <span class="role-chip rc-fin">ADMIN TÀI CHÍNH</span></span><span>1578 × 986</span></div>
+<div class="a-shell" data-shell="finance" data-active="fin-txns" data-title="Danh sách giao dịch">
+  <div class="a-pagehead">
+    <div><h1>Danh sách giao dịch</h1><div class="desc">1.284 giao dịch trong kỳ 01/09 – 16/09/2026</div></div>
+    <button class="btn btn-green" style="font-size:13px">📥 Xuất Excel</button>
+  </div>
+  <div class="toolbar">
+    <input class="input" placeholder="🔍 Tìm theo mã GD, tên người mua/bán..." style="flex:1;min-width:240px">
+    <select class="input"><option>Trạng thái: Tất cả</option><option>Thành công</option><option>Chờ xử lý</option><option>Thất bại</option></select>
+    <select class="input"><option>Phương thức: Tất cả</option><option>Ví điện tử</option><option>Chuyển khoản</option><option>COD</option></select>
+    <input class="input" type="date" value="2026-09-01" style="min-width:130px"><span class="muted">→</span><input class="input" type="date" value="2026-09-16" style="min-width:130px">
+  </div>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Mã GD</th><th>Người mua</th><th>Người bán</th><th>Sản phẩm</th><th>Số tiền</th><th>Phí sàn</th><th>Phương thức</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+    <tr><td><b>GD-10245</b></td><td>Lan Nguyễn</td><td>Đức Anh</td><td>Xe đạp Giant</td><td><b>2.400.000₫</b></td><td class="muted">120.000₫</td><td><span class="badge b-blue">Ví điện tử</span></td><td class="muted">16/09 08:12</td><td><span class="pill p-ok">Thành công</span></td><td><a class="link" href="#">Chi tiết</a></td></tr>
+    <tr><td><b>GD-10244</b></td><td>Trung Phạm</td><td>Thảo My</td><td>Sách giáo trình</td><td><b>180.000₫</b></td><td class="muted">9.000₫</td><td><span class="badge b-gray">Chuyển khoản</span></td><td class="muted">16/09 07:50</td><td><span class="pill p-warn">Chờ xử lý</span></td><td><a class="link" href="#">Chi tiết</a></td></tr>
+    <tr><td><b>GD-10243</b></td><td>Hà Vũ</td><td>Quốc Bảo</td><td>Laptop Dell</td><td><b>6.500.000₫</b></td><td class="muted">325.000₫</td><td><span class="badge b-blue">Ví điện tử</span></td><td class="muted">15/09 21:03</td><td><span class="pill p-bad">Thất bại</span></td><td><a class="link" href="#">Chi tiết</a></td></tr>
+    <tr><td><b>GD-10242</b></td><td>Minh Trí</td><td>Ngọc Hân</td><td>Tủ gỗ mini</td><td><b>750.000₫</b></td><td class="muted">37.500₫</td><td><span class="badge b-amber">COD</span></td><td class="muted">15/09 19:40</td><td><span class="pill p-ok">Thành công</span></td><td><a class="link" href="#">Chi tiết</a></td></tr>
+    <tr><td><b>GD-10241</b></td><td>Bảo Châu</td><td>Anh Tuấn</td><td>Máy ảnh Canon</td><td><b>3.200.000₫</b></td><td class="muted">160.000₫</td><td><span class="badge b-gray">Chuyển khoản</span></td><td class="muted">15/09 17:22</td><td><span class="pill p-warn">Chờ xử lý</span></td><td><a class="link" href="#">Chi tiết</a></td></tr>
+  </tbody></table></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px" class="muted">
+    <span>Hiển thị 1–5 trong 1.284 giao dịch</span>
+    <div style="display:flex;gap:6px"><button class="btn btn-green" style="padding:7px 14px;font-size:12.5px">1</button><button class="btn btn-line" style="padding:7px 14px;font-size:12.5px">2</button><button class="btn btn-line" style="padding:7px 14px;font-size:12.5px">3</button><span style="align-self:center">…</span><button class="btn btn-line" style="padding:7px 14px;font-size:12.5px">129</button></div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN TÀI CHÍNH: PHÍ DỊCH VỤ ============ -->
+<section class="screen" id="s-fin-fees">
+<div class="screen-tag"><span><b>Quản lý phí dịch vụ</b> <span class="role-chip rc-fin">ADMIN TÀI CHÍNH</span></span><span>1578 × 986</span></div>
+<div class="a-shell" data-shell="finance" data-active="fin-fees" data-title="Quản lý phí dịch vụ">
+  <div class="a-pagehead">
+    <div><h1>Quản lý phí dịch vụ</h1><div class="desc">Cấu hình phí sàn, phí rút tiền và phí phạt vi phạm</div></div>
+    <button class="btn btn-green" style="font-size:13px">＋ Thêm loại phí</button>
+  </div>
+  <div class="sect">
+    <h2>💲 Phí giao dịch <span class="muted" style="font-weight:400;font-size:12.5px">— theo sản phẩm / danh mục</span></h2>
+    <div class="tblwrap" style="margin-top:12px;box-shadow:none"><table class="tbl"><thead><tr><th>Loại phí</th><th>Áp dụng cho</th><th>Giá trị</th><th>Phí tối thiểu</th><th>Trạng thái</th><th>Cập nhật gần nhất</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+      <tr><td><b>Phí sàn chung</b></td><td>Tất cả danh mục</td><td><b>5%</b></td><td>5.000₫</td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">01/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+      <tr><td><b>Phí sàn - Điện tử</b></td><td>Điện thoại, Laptop, Máy ảnh</td><td><b>3%</b></td><td>15.000₫</td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">05/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+      <tr><td><b>Phí sàn - Sách / Đồ học tập</b></td><td>Sách, Văn phòng phẩm</td><td><b>2%</b></td><td>2.000₫</td><td><span class="pill p-mut">Tạm ngưng</span></td><td class="muted">28/08/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="sect">
+    <h2>🏦 Phí rút tiền <span class="muted" style="font-weight:400;font-size:12.5px">— người bán</span></h2>
+    <div class="tblwrap" style="margin-top:12px;box-shadow:none"><table class="tbl"><thead><tr><th>Loại phí</th><th>Điều kiện</th><th>Giá trị</th><th>Trạng thái</th><th>Cập nhật gần nhất</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+      <tr><td><b>Phí rút tiền tiêu chuẩn</b></td><td>Xử lý trong 1–2 ngày làm việc</td><td><b>0₫</b></td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">01/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+      <tr><td><b>Phí rút tiền nhanh</b></td><td>Xử lý trong 30 phút</td><td><b>10.000₫ / lần</b></td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">10/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="sect">
+    <h2>⚠️ Phí phạt <span class="muted" style="font-weight:400;font-size:12.5px">— vi phạm quy định vận hành</span></h2>
+    <div class="tblwrap" style="margin-top:12px;box-shadow:none"><table class="tbl"><thead><tr><th>Loại phí phạt</th><th>Áp dụng khi</th><th>Giá trị</th><th>Trạng thái</th><th>Cập nhật gần nhất</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+      <tr><td><b>Phí đặt cọc</b></td><td>Người bán bị mất cọc nếu hủy đơn sau khi đã xác nhận</td><td><b>2% giá trị đơn</b></td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">03/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+      <tr><td><b>Phạt giao hàng trễ hạn</b></td><td>Quá thời gian giao hàng cam kết mà chưa gửi</td><td><b>10.000₫ / đơn</b></td><td><span class="pill p-ok">Đang áp dụng</span></td><td class="muted">10/09/2026</td><td style="text-align:right"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+    </tbody></table></div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN TÀI CHÍNH: TRANH CHẤP ============ -->
+<section class="screen" id="s-fin-disputes">
+<div class="screen-tag"><span><b>Tranh chấp & Hoàn tiền</b> <span class="role-chip rc-fin">ADMIN TÀI CHÍNH</span></span><span>1578 × 986</span></div>
+<div class="a-shell" data-shell="finance" data-active="fin-disputes" data-title="Tranh chấp & Hoàn tiền">
+  <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat"><div class="ic" style="background:var(--red-soft)">🔴</div><div><div class="t">Đang mở</div><div class="v" style="color:var(--red)">7</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--amber-soft)">🟡</div><div><div class="t">Đang xem xét</div><div class="v" style="color:var(--amber)">4</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--green-soft)">✅</div><div><div class="t">Đã hoàn tiền (tháng này)</div><div class="v" style="color:var(--green-dark)">18</div></div></div>
+    <div class="stat"><div class="ic" style="background:#eef1ef">🚫</div><div><div class="t">Đã từ chối (tháng này)</div><div class="v">6</div></div></div>
+  </div>
+  <div class="chip-tabs">
+    <span class="badge b-green" style="border-color:var(--green)">Tất cả</span><span class="badge b-gray">Đang mở</span><span class="badge b-gray">Đang xem xét</span><span class="badge b-gray">Đã xử lý</span>
+  </div>
+  <div class="toolbar">
+    <input class="input" placeholder="🔍 Tìm theo mã tranh chấp, mã GD, tên người dùng..." style="flex:1;min-width:240px">
+    <select class="input"><option>Lý do: Tất cả</option><option>Hàng không đúng mô tả</option><option>Không nhận được hàng</option><option>Hàng lỗi/hỏng</option></select>
+    <select class="input"><option>Trạng thái: Tất cả</option><option>Đang mở</option><option>Đang xem xét</option><option>Đã hoàn tiền</option></select>
+  </div>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Mã TC</th><th>Mã GD</th><th>Người mua</th><th>Người bán</th><th>Lý do</th><th>Số tiền</th><th>Ngày tạo</th><th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+    <tr><td><b>TC-1042</b></td><td>GD-10245</td><td>Lan Nguyễn</td><td>Đức Anh</td><td>Hàng không đúng mô tả</td><td><b>2.400.000₫</b></td><td class="muted">14/09/2026</td><td><span class="pill p-bad">Đang mở</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><b>TC-1041</b></td><td>GD-10238</td><td>Quốc Bảo</td><td>Thảo My</td><td>Không nhận được hàng</td><td><b>950.000₫</b></td><td class="muted">13/09/2026</td><td><span class="pill p-warn">Đang xem xét</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><b>TC-1039</b></td><td>GD-10231</td><td>Hà Vũ</td><td>Minh Trí</td><td>Hàng lỗi/hỏng</td><td><b>6.500.000₫</b></td><td class="muted">11/09/2026</td><td><span class="pill p-bad">Đang mở</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><b>TC-1035</b></td><td>GD-10219</td><td>Bảo Châu</td><td>Anh Tuấn</td><td>Người bán không phản hồi</td><td><b>750.000₫</b></td><td class="muted">08/09/2026</td><td><span class="pill p-ok">Đã hoàn tiền</span></td><td style="text-align:right"><a class="link" href="#">Xem</a></td></tr>
+    <tr><td><b>TC-1031</b></td><td>GD-10204</td><td>Trung Phạm</td><td>Ngọc Hân</td><td>Hàng không đúng mô tả</td><td><b>320.000₫</b></td><td class="muted">05/09/2026</td><td><span class="pill p-mut">Đã từ chối</span></td><td style="text-align:right"><a class="link" href="#">Xem</a></td></tr>
+  </tbody></table></div>
+</div>
+</section>
+<!-- ============ ADMIN TÀI CHÍNH: BÁO CÁO DOANH THU ============ -->
+<section class="screen" id="s-fin-revenue">
+<div class="screen-tag"><span><b>Báo cáo doanh thu</b> <span class="role-chip rc-fin">ADMIN TÀI CHÍNH</span></span><span>1578 × 986</span></div>
+<div class="a-shell" data-shell="finance" data-active="fin-revenue" data-title="Báo cáo doanh thu">
+  <div class="a-pagehead">
+    <div><h1>Báo cáo doanh thu</h1><div class="desc">6 tháng gần nhất · 04/2026 – 09/2026</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-line" style="font-size:13px">📥 Xuất Excel</button><button class="btn btn-line" style="font-size:13px">📄 Xuất PDF</button></div>
+  </div>
+  <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="ic" style="background:var(--green-soft)">💰</div><div><div class="t">Tổng doanh thu (6 tháng)</div><div class="v" style="color:var(--green-dark)">268 tr₫</div><div class="tr tr-up">▲ 14% so với kỳ trước</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--blue-soft)">🧾</div><div><div class="t">Doanh thu từ phí sàn</div><div class="v">198 tr₫</div><div class="tr" style="color:var(--mut)">62% tổng doanh thu</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--amber-soft)">🔒</div><div><div class="t">Doanh thu từ phí đặt cọc</div><div class="v">42 tr₫</div><div class="tr" style="color:var(--mut)">15% tổng doanh thu</div></div></div>
+  </div>
+  <div class="row2" style="grid-template-columns:1.5fr 1fr;align-items:start">
+    <div class="sect">
+      <h2>📊 Doanh thu theo tháng</h2>
+      <div style="display:flex;align-items:flex-end;gap:12px;height:190px;padding:16px 8px 0">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,#93c5fd,#dbeafe);border-radius:7px 7px 0 0;height:88px"></div><span class="muted" style="font-size:10.5px">04/26</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,#93c5fd,#dbeafe);border-radius:7px 7px 0 0;height:104px"></div><span class="muted" style="font-size:10.5px">05/26</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,#93c5fd,#dbeafe);border-radius:7px 7px 0 0;height:96px"></div><span class="muted" style="font-size:10.5px">06/26</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,#93c5fd,#dbeafe);border-radius:7px 7px 0 0;height:126px"></div><span class="muted" style="font-size:10.5px">07/26</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,#93c5fd,#dbeafe);border-radius:7px 7px 0 0;height:142px"></div><span class="muted" style="font-size:10.5px">08/26</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:64%;background:linear-gradient(180deg,var(--green),#7ee787);border-radius:7px 7px 0 0;height:168px"></div><span class="muted" style="font-size:10.5px"><b style="color:var(--ink)">09/26</b></span></div>
+      </div>
+      <h2 style="margin-top:20px">🥧 Tỷ trọng nguồn doanh thu</h2>
+      <div style="display:grid;gap:10px;margin-top:12px">
+        <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span>Phí sàn</span><b>62%</b></div><div style="height:9px;background:#eef1ef;border-radius:6px"><div style="width:62%;height:100%;background:var(--green);border-radius:6px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span>Phí đặt cọc</span><b>23%</b></div><div style="height:9px;background:#eef1ef;border-radius:6px"><div style="width:23%;height:100%;background:var(--blue);border-radius:6px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span>Phí phạt khác</span><b>15%</b></div><div style="height:9px;background:#eef1ef;border-radius:6px"><div style="width:15%;height:100%;background:var(--amber);border-radius:6px"></div></div></div>
+      </div>
+    </div>
+    <div class="sect">
+      <h2>🏷️ Top danh mục</h2>
+      <div style="display:grid;gap:12px;margin-top:14px;font-size:12.5px">
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>📱 Điện tử</span><b>37,2 tr₫</b></div><div style="height:8px;background:#eef1ef;border-radius:6px"><div style="width:100%;height:100%;background:var(--green);border-radius:6px"></div></div><div class="muted" style="font-size:11px;margin-top:3px">412 GD · 38% tỷ trọng</div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>🛵 Xe cộ, phụ kiện</span><b>31,0 tr₫</b></div><div style="height:8px;background:#eef1ef;border-radius:6px"><div style="width:83%;height:100%;background:var(--blue);border-radius:6px"></div></div><div class="muted" style="font-size:11px;margin-top:3px">186 GD · 32% tỷ trọng</div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>🛋️ Nội thất, gia dụng</span><b>15,5 tr₫</b></div><div style="height:8px;background:#eef1ef;border-radius:6px"><div style="width:42%;height:100%;background:var(--amber);border-radius:6px"></div></div><div class="muted" style="font-size:11px;margin-top:3px">298 GD · 16% tỷ trọng</div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>📚 Sách, học tập</span><b>2,8 tr₫</b></div><div style="height:8px;background:#eef1ef;border-radius:6px"><div style="width:12%;height:100%;background:#9aa1a9;border-radius:6px"></div></div><div class="muted" style="font-size:11px;margin-top:3px">388 GD · 3% tỷ trọng</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN NỘI DUNG: TỔNG QUAN ============ -->
+<section class="screen" id="s-content-overview">
+<div class="screen-tag"><span><b>Tổng quan nội dung</b> <span class="role-chip rc-content">ADMIN NỘI DUNG</span></span><span>1417 × 986</span></div>
+<div class="a-shell" data-shell="content" data-active="content-overview" data-title="Tổng quan">
+  <div class="stat-grid">
+    <div class="stat"><div class="ic" style="background:#f3e8ff">🎟️</div><div><div class="t">Khuyến mãi đang chạy</div><div class="v" style="color:var(--green-dark)">6</div><div class="tr tr-up">2 sắp chạy</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--blue-soft)">🖼️</div><div><div class="t">Banner đang hiển thị</div><div class="v">4</div><div class="tr" style="color:var(--mut)">2 vị trí hero</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--red-soft)">🚩</div><div><div class="t">Báo cáo mới</div><div class="v" style="color:var(--red)">15</div><div class="tr tr-down">Cần xử lý hôm nay</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--amber-soft)">👀</div><div><div class="t">Đang xem xét</div><div class="v" style="color:var(--amber)">9</div><div class="tr" style="color:var(--mut)">42 đã xử lý tháng này</div></div></div>
+  </div>
+  <div class="sect">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>🚩 Báo cáo người dùng gần đây</h2><a class="link" href="#" onclick="go('reports');return false">Xem tất cả →</a></div>
+    <div class="tblwrap" style="box-shadow:none"><table class="tbl"><thead><tr><th>Người bị báo cáo</th><th>Lý do</th><th>Người báo cáo</th><th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+      <tr><td><b>Đức Anh</b></td><td>Đăng sản phẩm giả</td><td>Lan Nguyễn</td><td><span class="pill p-info">Mới</span></td><td style="text-align:right"><button class="btn btn-line" style="padding:6px 16px;font-size:12px">Xem xét</button></td></tr>
+      <tr><td><b>Ngọc Hân</b></td><td>Ngôn từ phản cảm</td><td>Trung Phạm</td><td><span class="pill p-warn">Đang xem xét</span></td><td style="text-align:right"><button class="btn btn-line" style="padding:6px 16px;font-size:12px">Xem xét</button></td></tr>
+      <tr><td><b>Anh Tuấn</b></td><td>Lừa đảo, không giao hàng</td><td>Hà Vũ</td><td><span class="pill p-info">Mới</span></td><td style="text-align:right"><button class="btn btn-line" style="padding:6px 16px;font-size:12px">Xem xét</button></td></tr>
+      <tr><td><b>Minh Trí</b></td><td>Spam tin nhắn</td><td>Bảo Châu</td><td><span class="pill p-mut">Đã xử lý</span></td><td style="text-align:right"><a class="link" href="#">Chi tiết</a></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="row2">
+    <div class="sect">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>🎟️ Khuyến mãi đang chạy</h2><a class="link" href="#" onclick="go('promos');return false">Xem tất cả →</a></div>
+      <div style="display:grid;gap:10px">
+        <div class="card" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:none"><div><b style="font-size:13px">Giảm phí sàn tháng 9</b><div class="muted" style="font-size:11.5px">01/09 - 30/09/2026 · -2% phí sàn</div></div><span class="pill p-ok">Đang chạy</span></div>
+        <div class="card" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:none"><div><b style="font-size:13px">Freeship đơn đầu tiên</b><div class="muted" style="font-size:11.5px">01/09 - 15/10/2026 · 842/2.000 đã dùng</div></div><span class="pill p-ok">Đang chạy</span></div>
+        <div class="card" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:none"><div><b style="font-size:13px">Sinh viên mới - ưu đãi đăng bán</b><div class="muted" style="font-size:11.5px">10/09 - 30/09/2026 · 231/1.000 đã dùng</div></div><span class="pill p-ok">Đang chạy</span></div>
+      </div>
+    </div>
+    <div class="sect">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2>🖼️ Banner đang hiển thị</h2><a class="link" href="#" onclick="go('banners');return false">Xem tất cả →</a></div>
+      <div style="display:grid;gap:10px">
+        <div class="card" style="padding:13px 16px;box-shadow:none"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">🎒 Banner Back to School</b><span class="pill p-ok">Đang chạy</span></div><div class="muted" style="font-size:11.5px">Trang chủ - Hero | 20/08 - 15/09/2026</div></div>
+        <div class="card" style="padding:13px 16px;box-shadow:none"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">🚚 Banner Freeship đơn đầu tiên</b><span class="pill p-ok">Đang chạy</span></div><div class="muted" style="font-size:11.5px">Trang chủ - Banner phụ | 01/09 - 15/10/2026</div></div>
+        <div class="card" style="padding:13px 16px;box-shadow:none"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">✨ Banner Tháng 11 - Ưu đãi cuối năm</b><span class="pill p-warn">Sắp chạy</span></div><div class="muted" style="font-size:11.5px">Trang chủ - Hero | 01/11 - 30/11/2026</div></div>
+        <div class="card" style="padding:13px 16px;box-shadow:none"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">🎓 Banner Sinh viên mới</b><span class="pill p-ok">Đang chạy</span></div><div class="muted" style="font-size:11.5px">Trang danh mục | 10/09 - 30/09/2026</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN NỘI DUNG: KHUYẾN MÃI ============ -->
+<section class="screen" id="s-promos">
+<div class="screen-tag"><span><b>Quản lý khuyến mãi</b> <span class="role-chip rc-content">ADMIN NỘI DUNG</span></span><span>1418 × 1068</span></div>
+<div class="a-shell" data-shell="content" data-active="promos" data-title="Quản lý khuyến mãi">
+  <div class="a-pagehead">
+    <div><h1>Quản lý khuyến mãi</h1><div class="desc">Tạo và theo dõi các chương trình ưu đãi trên sàn</div></div>
+    <button class="btn btn-green" style="font-size:13px">＋ Tạo khuyến mãi</button>
+  </div>
+  <div class="chip-tabs">
+    <span class="badge b-green" style="border-color:var(--green)">Tất cả</span><span class="badge b-gray">Đang chạy · 3</span><span class="badge b-gray">Sắp chạy · 2</span><span class="badge b-gray">Đã kết thúc · 1</span>
+  </div>
+  <div class="toolbar">
+    <input class="input" placeholder="🔍 Tìm theo tên khuyến mãi, mã voucher..." style="flex:1;min-width:220px">
+    <select class="input"><option>Loại: Tất cả</option><option>Giảm phí sàn</option><option>Freeship</option><option>Mã giảm giá</option><option>Ưu đãi đăng bán</option></select>
+    <select class="input"><option>Trạng thái: Tất cả</option><option>Đang chạy</option><option>Sắp chạy</option><option>Đã kết thúc</option></select>
+  </div>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Tên khuyến mãi</th><th>Loại</th><th>Mã voucher</th><th>Mức giảm</th><th>Thời gian</th><th>Đã dùng</th><th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+    <tr><td><b>Giảm phí sàn tháng 9</b></td><td>Giảm phí sàn</td><td class="muted">—</td><td>-2% phí sàn</td><td class="muted">01/09 - 30/09/2026</td><td class="muted">—</td><td><span class="pill p-ok">Đang chạy</span></td><td style="text-align:right;white-space:nowrap"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Tắt</a></td></tr>
+    <tr><td><b>Freeship đơn đầu tiên</b></td><td>Freeship</td><td><span class="badge b-blue">FREESHIP01</span></td><td>Miễn phí ship (tối đa 20.000₫)</td><td class="muted">01/09 - 15/10/2026</td><td><b>842</b><span class="muted">/2.000</span><div style="height:6px;background:#eef1ef;border-radius:4px;margin-top:5px"><div style="width:42%;height:100%;background:var(--green);border-radius:4px"></div></div></td><td><span class="pill p-ok">Đang chạy</span></td><td style="text-align:right;white-space:nowrap"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Tắt</a></td></tr>
+    <tr><td><b>Sinh viên mới - ưu đãi đăng bán</b></td><td>Ưu đãi đăng bán</td><td><span class="badge b-blue">SVMOI2026</span></td><td>Miễn phí 5 lượt đăng nổi bật</td><td class="muted">10/09 - 30/09/2026</td><td><b>231</b><span class="muted">/1.000</span><div style="height:6px;background:#eef1ef;border-radius:4px;margin-top:5px"><div style="width:23%;height:100%;background:var(--green);border-radius:4px"></div></div></td><td><span class="pill p-ok">Đang chạy</span></td><td style="text-align:right;white-space:nowrap"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Tắt</a></td></tr>
+    <tr><td><b>Black Friday - Giảm sâu</b></td><td>Mã giảm giá</td><td><span class="badge b-blue">BF2026</span></td><td>-15% tối đa 50.000₫</td><td class="muted">25/11 - 01/12/2026</td><td><b>0</b><span class="muted">/5.000</span></td><td><span class="pill p-warn">Sắp chạy</span></td><td style="text-align:right;white-space:nowrap"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+    <tr><td><b>Ưu đãi cuối năm tháng 11</b></td><td>Giảm phí sàn</td><td class="muted">—</td><td>-3% phí sàn</td><td class="muted">01/11 - 30/11/2026</td><td class="muted">—</td><td><span class="pill p-warn">Sắp chạy</span></td><td style="text-align:right;white-space:nowrap"><a class="link" href="#">Sửa</a> · <a class="link" href="#" style="color:var(--red)">Xóa</a></td></tr>
+    <tr><td><b>Khai giảng - Back to School</b></td><td>Mã giảm giá</td><td><span class="badge b-blue">SCHOOL24</span></td><td>-10.000₫ đơn từ 100.000₫</td><td class="muted">20/08 - 15/09/2026</td><td><b>1.204</b><span class="muted">/1.500</span><div style="height:6px;background:#eef1ef;border-radius:4px;margin-top:5px"><div style="width:80%;height:100%;background:#9aa1a9;border-radius:4px"></div></div></td><td><span class="pill p-mut">Đã kết thúc</span></td><td style="text-align:right"><a class="link" href="#">Xem</a></td></tr>
+  </tbody></table></div>
+</div>
+</section>
+<!-- ============ ADMIN NỘI DUNG: BANNER ============ -->
+<section class="screen" id="s-banners">
+<div class="screen-tag"><span><b>Quản lý banner</b> <span class="role-chip rc-content">ADMIN NỘI DUNG</span></span><span>1418 × 1018</span></div>
+<div class="a-shell" data-shell="content" data-active="banners" data-title="Quản lý banner">
+  <div class="a-pagehead">
+    <div><h1>Quản lý banner</h1><div class="desc">Banner hiển thị trên trang chủ và trang danh mục · kích thước chuẩn 1200×400</div></div>
+    <button class="btn btn-green" style="font-size:13px">＋ Tải banner mới</button>
+  </div>
+  <div class="chip-tabs">
+    <span class="badge b-green" style="border-color:var(--green)">Tất cả · 6</span><span class="badge b-gray">Đang chạy · 3</span><span class="badge b-gray">Sắp chạy · 2</span><span class="badge b-gray">Đã kết thúc · 1</span>
+  </div>
+  <div style="display:grid;gap:14px">
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#1c6b2c,#7ee787);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">🎒 Back to School</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Back to School</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang chủ - Hero · 🕘 20/08 - 15/09/2026 · 👁 45.2k lượt xem</div></div>
+      <span class="pill p-ok">Đang chạy</span><a class="link" href="#">Sửa</a><a class="link" href="#" style="color:var(--red)">Tắt</a>
+    </div>
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#b45309,#fcd34d);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">🚚 Freeship</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Freeship đơn đầu tiên</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang chủ - Banner phụ · 🕘 01/09 - 15/10/2026 · 👁 32.8k lượt xem</div></div>
+      <span class="pill p-ok">Đang chạy</span><a class="link" href="#">Sửa</a><a class="link" href="#" style="color:var(--red)">Tắt</a>
+    </div>
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#1d4ed8,#93c5fd);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">🎓 Sinh viên mới</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Sinh viên mới - ưu đãi đăng bán</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang danh mục · 🕘 10/09 - 30/09/2026 · 👁 18.4k lượt xem</div></div>
+      <span class="pill p-ok">Đang chạy</span><a class="link" href="#">Sửa</a><a class="link" href="#" style="color:var(--red)">Tắt</a>
+    </div>
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#7c3aed,#c4b5fd);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">✨ Ưu đãi T11</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Tháng 11 - Ưu đãi cuối năm</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang chủ - Hero · 🕘 01/11 - 30/11/2026</div></div>
+      <span class="pill p-warn">Sắp chạy</span><a class="link" href="#">Sửa</a><a class="link" href="#" style="color:var(--red)">Xóa</a>
+    </div>
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#111827,#4b5563);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">🖤 Black Friday</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Black Friday - Giảm sâu</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang chủ - Hero · 🕘 25/11 - 01/12/2026</div></div>
+      <span class="pill p-warn">Sắp chạy</span><a class="link" href="#">Sửa</a><a class="link" href="#" style="color:var(--red)">Xóa</a>
+    </div>
+    <div class="card" style="display:flex;gap:18px;padding:18px;align-items:center;opacity:.72">
+      <div style="width:240px;height:96px;border-radius:12px;background:linear-gradient(120deg,#9ca3af,#d1d5db);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0">🎒 Khai giảng 2026</div>
+      <div style="flex:1"><b style="font-size:14px">Banner Khai giảng - Back to School 2026</b><div class="muted" style="font-size:12px;margin-top:4px">📍 Trang danh mục · 🕘 20/08 - 15/09/2026 · 👁 51.9k lượt xem</div></div>
+      <span class="pill p-mut">Đã kết thúc</span><a class="link" href="#">Xem</a>
+    </div>
+  </div>
+</div>
+</section>
+<!-- ============ ADMIN NỘI DUNG: BÁO CÁO NGƯỜI DÙNG ============ -->
+<section class="screen" id="s-reports">
+<div class="screen-tag"><span><b>Báo cáo vi phạm nội dung</b> <span class="role-chip rc-content">ADMIN NỘI DUNG</span></span><span>1418 × 1008</span></div>
+<div class="a-shell" data-shell="content" data-active="reports" data-title="Báo cáo vi phạm nội dung">
+  <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat"><div class="ic" style="background:var(--red-soft)">🆕</div><div><div class="t">Báo cáo mới</div><div class="v" style="color:var(--red)">15</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--amber-soft)">👀</div><div><div class="t">Đang xem xét</div><div class="v" style="color:var(--amber)">9</div></div></div>
+    <div class="stat"><div class="ic" style="background:var(--green-soft)">✅</div><div><div class="t">Đã xử lý (tháng này)</div><div class="v" style="color:var(--green-dark)">42</div></div></div>
+    <div class="stat"><div class="ic" style="background:#eef1ef">⏭️</div><div><div class="t">Đã bỏ qua (tháng này)</div><div class="v">11</div></div></div>
+  </div>
+  <div class="chip-tabs">
+    <span class="badge b-green" style="border-color:var(--green)">Tất cả</span><span class="badge b-gray">💬 Bình luận</span><span class="badge b-gray">📝 Mô tả sản phẩm</span><span class="badge b-gray">✉️ Tin nhắn</span><span class="badge b-gray">🖼️ Ảnh đại diện / bìa</span>
+  </div>
+  <div class="toolbar">
+    <input class="input" placeholder="🔍 Tìm theo tên người bị báo cáo, nội dung..." style="flex:1;min-width:220px">
+    <select class="input"><option>Loại nội dung: Tất cả</option><option>Bình luận</option><option>Mô tả sản phẩm</option><option>Tin nhắn</option></select>
+    <select class="input"><option>Lý do: Tất cả</option><option>Ngôn từ phản cảm</option><option>Thông tin sai lệch</option><option>Spam</option></select>
+    <select class="input"><option>Trạng thái: Tất cả</option><option>Mới</option><option>Đang xem xét</option><option>Đã xử lý</option></select>
+  </div>
+  <div class="tblwrap"><table class="tbl"><thead><tr><th>Loại nội dung</th><th>Người vi phạm</th><th>Lý do</th><th>Người báo cáo</th><th>Lượt BC</th><th>Ngày</th><th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
+    <tr><td><span class="badge b-gray">💬 Bình luận</span></td><td><b>Đức Anh</b></td><td>Ngôn từ phản cảm</td><td>Lan Nguyễn</td><td><b>3</b></td><td class="muted">16/09/2026</td><td><span class="pill p-info">Mới</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><span class="badge b-gray">📝 Mô tả SP</span></td><td><b>Ngọc Hân</b></td><td>Thông tin sai lệch</td><td>Trung Phạm</td><td><b>1</b></td><td class="muted">15/09/2026</td><td><span class="pill p-warn">Đang xem xét</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><span class="badge b-gray">✉️ Tin nhắn</span></td><td><b>Anh Tuấn</b></td><td>Quấy rối / xúc phạm</td><td>Hà Vũ</td><td><b>2</b></td><td class="muted">15/09/2026</td><td><span class="pill p-info">Mới</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><span class="badge b-gray">🖼️ Ảnh bìa</span></td><td><b>Minh Trí</b></td><td>Hình ảnh phản cảm</td><td>Bảo Châu</td><td><b>5</b></td><td class="muted">14/09/2026</td><td><span class="pill p-warn">Đang xem xét</span></td><td style="text-align:right"><button class="btn btn-green" style="padding:7px 16px;font-size:12px">Xử lý</button></td></tr>
+    <tr><td><span class="badge b-gray">💬 Bình luận</span></td><td><b>Quốc Bảo</b></td><td>Nội dung spam / quảng cáo</td><td>Thảo My</td><td><b>1</b></td><td class="muted">12/09/2026</td><td><span class="pill p-mut">Đã xử lý</span></td><td style="text-align:right"><a class="link" href="#">Xem</a></td></tr>
+  </tbody></table></div>
+  <div class="card" style="margin-top:16px;padding:18px 22px;border-left:4px solid var(--red)">
+    <b style="font-size:13.5px">⚠️ Vi phạm nhiều lần — Đức Anh</b>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">Đã bị cảnh cáo 1 lần (12/08/2026 - Bình luận spam). Đây là vi phạm lần thứ 2 với nội dung: <i>"Xe này nhìn như đồ bỏ đi, ai mà... mua làm gì"</i> trên bài đăng "Xe đạp Giant". Đề xuất: <b style="color:var(--red)">khóa bình luận 7 ngày</b>.</p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-red" style="padding:9px 20px;font-size:12.5px">🔨 Khóa 7 ngày</button><button class="btn btn-line" style="padding:9px 20px;font-size:12.5px">⚠️ Cảnh cáo</button><button class="btn btn-line" style="padding:9px 20px;font-size:12.5px">⏭ Bỏ qua báo cáo</button></div>
+  </div>
+</div>
+</section>
+</div></main>
+</div>
+<script>
+function go(id){
+  if(!document.getElementById('s-'+id)) return;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function quickChat(el){document.getElementById('chatpop').style.display='flex';setTimeout(()=>chatSay(el.textContent.trim()),400);}
+function chatSay(t){
+  var body=document.getElementById('chatbody'); if(!body) return;
+  var d=document.createElement('div');
+  d.style.cssText='text-align:right;margin:8px 0';
+  d.innerHTML='<span style="display:inline-block;background:var(--green);color:#fff;padding:9px 14px;border-radius:14px 14px 4px 14px;font-size:13px;max-width:88%;box-shadow:0 2px 8px rgba(35,163,54,.25)">'+t.replace(/</g,'&lt;')+'</span>';
+  body.appendChild(d);
+  body.parentElement.scrollTop=body.parentElement.scrollHeight;
+  setTimeout(function(){
+    var r=document.createElement('div');
+    r.style.cssText='text-align:left;margin:8px 0';
+    r.innerHTML='<span style="display:inline-block;background:#fff;border:1px solid var(--line);padding:9px 14px;border-radius:14px 14px 14px 4px;font-size:13px;max-width:88%;box-shadow:var(--sh)">Dạ còn bạn ơi, phím mới 99% fullbox ạ. Bạn ở Dĩ An thì mình ship trong ngày được nha 👍</span>';
+    body.appendChild(r);
+    body.parentElement.scrollTop=body.parentElement.scrollHeight;
+  },900);
+}
+function chatSend(){
+  var i=document.getElementById('chatinput');
+  if(i&&i.value.trim()){chatSay(i.value.trim());i.value='';}
+}
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='chatinput')chatSend();});
+</script>
+</body>
+</html>

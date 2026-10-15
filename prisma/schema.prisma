@@ -1,0 +1,685 @@
+// ============================================================
+// Nola2Hand — Prisma schema
+// Sàn TMĐT đồ cũ: buyer / seller / admin tài chính / admin nội dung
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- Enums ----------------
+enum UserStatus {
+  ACTIVE
+  BANNED
+  PENDING_VERIFICATION
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  USED_GOOD
+  USED_FAIR
+  FOR_PARTS
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  RESERVED
+  HIDDEN
+  SOLD_OUT
+  REJECTED
+  DELETED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING_DEPOSIT
+  DEPOSITED
+  CONFIRMED
+  SHIPPING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  REFUNDED
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+  CANCELLED
+}
+
+enum TxnType {
+  TOPUP
+  WITHDRAW
+  ORDER_INCOME
+  ORDER_PAYMENT
+  PLATFORM_FEE
+  REFUND
+  ADJUSTMENT
+}
+
+enum TxnStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ReportTargetType {
+  COMMENT
+  LISTING_DESC
+  MESSAGE
+  AVATAR
+  LISTING
+}
+
+enum ReportStatus {
+  NEW
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum DisputeStatus {
+  OPEN
+  REVIEWING
+  REFUNDED
+  REJECTED
+  CLOSED
+}
+
+enum PromoType {
+  PLATFORM_FEE_DISCOUNT
+  FREESHIP
+  VOUCHER
+  BOOST
+}
+
+enum PromoStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum BannerPosition {
+  HOME_HERO
+  HOME_SECONDARY
+  CATEGORY
+}
+
+enum BannerStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum FeeKind {
+  PLATFORM_TXN
+  WITHDRAW
+  PENALTY
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+// ---------------- Auth & Users ----------------
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique // BUYER | SELLER | ADMIN_FINANCE | ADMIN_CONTENT
+  description String?
+  users       UserRole[]
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  email         String     @unique
+  googleId      String?    @unique // liên kết đăng nhập Google
+  passwordHash  String
+  fullName      String
+  phone         String?
+  avatarUrl     String?
+  dateOfBirth   DateTime?
+  gender        String?
+  bio           String?
+  isVerified    Boolean    @default(false)
+  idVerified    Boolean    @default(false)
+  status        UserStatus @default(ACTIVE)
+  banReason     String?
+  bannedAt      DateTime?
+  passwordResetTokenHash String?
+  passwordResetExpiresAt DateTime?
+  emailVerificationTokenHash String?
+  emailVerificationExpiresAt DateTime?
+  emailOtpHash      String?
+  emailOtpExpiresAt DateTime?
+  emailOtpAttempts  Int      @default(0)
+  passwordOtpHash      String?
+  passwordOtpExpiresAt DateTime?
+  passwordOtpAttempts  Int      @default(0)
+  sessionVersion Int @default(0)
+  canManageRoles Boolean @default(false)
+  emailVerifiedAt DateTime?
+  withdrawals WithdrawalRequest[]
+  savedSearches SavedSearch[]
+  roles         UserRole[]
+  sellerProfile SellerProfile?
+  wallet        Wallet?
+  addresses     Address[]
+  listings      Listing[]    @relation("SellerListings")
+  favorites     Favorite[]
+  cartItems     CartItem[]
+  offers        PriceOffer[] @relation("BuyerOffers")
+  ordersBuyer   Order[]      @relation("BuyerOrders")
+  ordersSeller  Order[]      @relation("SellerOrders")
+  reviewsGiven  Review[]     @relation("Reviewer")
+  reviewsGot    Review[]     @relation("Reviewee")
+  reportsMade   Report[]     @relation("Reporter")
+  reportsHandled Report[]    @relation("ReportHandler")
+  disputesBuyer Dispute[]    @relation("DisputeBuyer")
+  disputesSeller Dispute[]   @relation("DisputeSeller")
+  notifications Notification[]
+  messagesSent  Message[]    @relation("MsgSender")
+  messagesGot   Message[]    @relation("MsgReceiver")
+  posts         Post[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  @@id([userId, roleId])
+}
+
+model SellerProfile {
+  id           Int     @id @default(autoincrement())
+  userId       Int     @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shopName     String
+  rating       Float   @default(0)
+  totalReviews Int     @default(0)
+  responseRate Int     @default(100)
+  totalOrders  Int     @default(0)
+  createdAt    DateTime @default(now())
+}
+
+model Address {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String  // "Nhà", "Công ty"
+  receiver  String
+  phone     String
+  street    String
+  ward      String?
+  district  String?
+  city      String
+  isDefault Boolean @default(false)
+}
+
+// ---------------- Catalog ----------------
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String
+  slug      String     @unique
+  icon      String?
+  parentId  Int?
+  parent    Category?  @relation("CatTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CatTree")
+  listings  Listing[]
+  feePct    Float?     // phí sàn riêng cho danh mục (ghi đè cấu hình chung)
+}
+
+model Listing {
+  id            Int              @id @default(autoincrement())
+  sellerId      Int
+  seller        User             @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId    Int
+  category      Category         @relation(fields: [categoryId], references: [id])
+  title         String
+  description   String           @db.Text
+  price         Int              // VND
+  originalPrice Int?
+  condition     ListingCondition @default(USED_GOOD)
+  isFree        Boolean          @default(false) // cho tặng 0đ
+  isVerified    Boolean          @default(false) // đã kiểm định
+  status        ListingStatus    @default(PENDING_REVIEW)
+  rejectReason  String?
+  city          String           @default("")
+  deliveryMethod String          @default("ANY")
+  specifications Json            @default("{}")
+  priceHistory  PriceHistory[]
+  views         Int              @default(0)
+  images        ListingImage[]
+  favorites     Favorite[]
+  cartItems     CartItem[]
+  offers        PriceOffer[]
+  orders        Order[]
+  boostedUntil  DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([sellerId, status])
+  @@index([categoryId, status])
+}
+
+model ListingImage {
+  id        Int     @id @default(autoincrement())
+  listingId Int
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int     @default(0)
+}
+
+model Favorite {
+  userId    Int
+  listingId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, listingId])
+}
+
+model CartItem {
+  userId    Int
+  listingId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, listingId])
+}
+
+// ---------------- Trading: offers -> orders -> escrow ----------------
+model PriceOffer {
+  id          Int         @id @default(autoincrement())
+  listingId   Int
+  listing     Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId     Int
+  buyer       User        @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+  offeredPrice Int
+  message     String?
+  shipMethod  String?     // NOLA_SHIP | MEETUP
+  status      OfferStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime    @default(now())
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  code            String      @unique // NL2H-88291
+  buyerId         Int
+  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId        Int
+  seller          User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  listingId       Int
+  listing         Listing     @relation(fields: [listingId], references: [id])
+  priceAgreed     Int
+  depositAmount   Int         @default(0)
+  remainingAmount Int
+  shippingFee     Int         @default(0)
+  discountAmount  Int         @default(0)
+  totalAmount     Int
+  platformFee     Int         @default(0)
+  paymentMethod   String?
+  status          OrderStatus @default(PENDING_DEPOSIT)
+  shipName        String?
+  shipPhone       String?
+  shipAddress     String?
+  note            String?
+  trackingCode    String?
+  cancelReason    String?
+  reservationExpiresAt DateTime?
+  settlementMethod String     @default("COD")
+  codCollectedAt DateTime?
+  escrow          Escrow?
+  timeline        OrderTimeline[]
+  dispute         Dispute?
+  review          Review?
+  returnRequest   ReturnRequest?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderTimeline {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Escrow {
+  id         Int         @id @default(autoincrement())
+  orderId    Int         @unique
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount     Int
+  status     EscrowStatus @default(HELD)
+  heldAt     DateTime    @default(now())
+  releasedAt DateTime?
+}
+
+// ---------------- Wallet ----------------
+model Wallet {
+  id             Int                 @id @default(autoincrement())
+  userId         Int                 @unique
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance        Int                 @default(0)
+  pendingBalance Int                 @default(0)
+  transactions   WalletTransaction[]
+  banks          BankAccount[]
+}
+
+model WalletTransaction {
+  id           Int       @id @default(autoincrement())
+  walletId     Int
+  wallet       Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type         TxnType
+  amount       Int       // + vào / - ra (số âm = tiền ra)
+  balanceAfter Int
+  status       TxnStatus @default(SUCCESS)
+  reference    String?   // mã tham chiếu: mã đơn, mã GD...
+  note         String?
+  createdAt    DateTime  @default(now())
+  @@index([walletId, createdAt])
+}
+
+model WithdrawalRequest {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  requestKey String
+  bankAccountId Int?
+  reference String @unique
+  amount Int
+  fee Int @default(0)
+  bankName String
+  accountNumber String
+  accountName String
+  status String @default("PENDING")
+  resolution String?
+  transferReference String?
+  paidAt DateTime?
+  handledBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, requestKey])
+  @@index([status, createdAt])
+}
+
+model ReturnRequest {
+  id Int @id @default(autoincrement())
+  orderId Int @unique
+  order Order @relation(fields: [orderId], references: [id])
+  reference String @unique
+  status String @default("REQUESTED")
+  originalOrderStatus OrderStatus
+  reason String
+  evidences Json @default("[]")
+  resolution String?
+  fundingSource String?
+  refundAmount Int @default(0)
+  codAmount Int @default(0)
+  codReference String?
+  codRefundedAt DateTime?
+  codConfirmedAt DateTime?
+  trackingCode String?
+  receivedNote String?
+  requestedAt DateTime @default(now())
+  approvedAt DateTime?
+  shippedAt DateTime?
+  receivedAt DateTime?
+  refundedAt DateTime?
+  updatedAt DateTime @updatedAt
+  @@index([status, requestedAt])
+}
+
+model ActionQuota {
+  userId Int
+  action String
+  windowStart DateTime
+  count Int @default(0)
+  @@id([userId, action, windowStart])
+  @@index([windowStart])
+}
+
+model UserBlock {
+  blockerId Int
+  blockedId Int
+  createdAt DateTime @default(now())
+  @@id([blockerId, blockedId])
+}
+
+model BankAccount {
+  id            Int     @id @default(autoincrement())
+  walletId      Int
+  wallet        Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  bankName      String
+  accountNumber String
+  accountName   String
+  isDefault     Boolean @default(false)
+}
+
+// ---------------- Reviews & Posts ----------------
+model Review {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @unique
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewerId Int
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId Int
+  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  listingId  Int?
+  rating     Int      // 1..5
+  comment    String?  @db.Text
+  type       String   @default("SELLER") // SELLER | PRODUCT
+  sellerReply String? @db.Text
+  sentiment  String   @default("NEUTRAL")
+  sentimentSource String @default("LOCAL")
+  createdAt  DateTime @default(now())
+}
+
+model Post {
+  id        Int        @id @default(autoincrement())
+  authorId  Int
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  slug      String     @unique
+  excerpt   String?
+  coverUrl  String?
+  content   String     @db.Text
+  status    PostStatus @default(DRAFT)
+  views     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ---------------- Marketing ----------------
+model Promo {
+  id            Int        @id @default(autoincrement())
+  name          String
+  type          PromoType
+  code          String?    @unique
+  discountType  String     @default("PERCENT") // PERCENT | AMOUNT
+  discountValue Int        // % hoặc VND
+  maxDiscount   Int?
+  minOrder      Int        @default(0)
+  usageLimit    Int?
+  usedCount     Int        @default(0)
+  startsAt      DateTime
+  endsAt        DateTime
+  status        PromoStatus @default(DRAFT)
+  usages        PromoUsage[]
+  createdAt     DateTime   @default(now())
+}
+
+model PromoUsage {
+  id      Int      @id @default(autoincrement())
+  promoId Int
+  promo   Promo    @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  userId  Int
+  orderId Int?
+  usedAt  DateTime @default(now())
+  @@unique([promoId, userId, orderId])
+}
+
+model Banner {
+  id        Int            @id @default(autoincrement())
+  title     String
+  imageUrl  String
+  linkUrl   String?
+  position  BannerPosition
+  startsAt  DateTime
+  endsAt    DateTime
+  status    BannerStatus   @default(DRAFT)
+  views     Int            @default(0)
+  createdAt DateTime       @default(now())
+}
+
+// ---------------- Moderation & Finance admin ----------------
+model Report {
+  id          Int              @id @default(autoincrement())
+  reporterId  Int
+  reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
+  targetType  ReportTargetType
+  targetId    Int
+  targetUserId Int?
+  reason      String
+  description String?          @db.Text
+  status      ReportStatus     @default(NEW)
+  handlerId   Int?
+  handler     User?            @relation("ReportHandler", fields: [handlerId], references: [id])
+  resolution  String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Dispute {
+  id          Int           @id @default(autoincrement())
+  code        String        @unique // TC-1042
+  orderId     Int           @unique
+  order       Order         @relation(fields: [orderId], references: [id])
+  buyerId     Int
+  buyer       User          @relation("DisputeBuyer", fields: [buyerId], references: [id])
+  sellerId    Int
+  seller      User          @relation("DisputeSeller", fields: [sellerId], references: [id])
+  reason      String
+  description String        @db.Text
+  amount      Int
+  status      DisputeStatus @default(OPEN)
+  resolution  String?       @db.Text
+  evidences   DisputeEvidence[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model DisputeEvidence {
+  id        Int     @id @default(autoincrement())
+  disputeId Int
+  dispute   Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  url       String
+  note      String?
+}
+
+model FeeConfig {
+  id        Int     @id @default(autoincrement())
+  kind      FeeKind
+  name      String
+  percent   Float?  // % nếu tính theo %
+  amount    Int?    // số tiền cố định (VND)
+  minAmount Int?    // phí tối thiểu
+  condition String? // mô tả điều kiện áp dụng
+  isActive  Boolean @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------- Communication ----------------
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  sender     User     @relation("MsgSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId Int
+  receiver   User     @relation("MsgReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  listingId  Int?
+  orderId    Int?
+  body       String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  @@index([senderId, receiverId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // ORDER | OFFER | ESCROW | DISPUTE | REPORT | PROMO | SYSTEM
+  title     String
+  body      String?
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  adminId   Int
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String   // LOCK_USER, RESOLVE_DISPUTE, UPDATE_FEE...
+  target    String?
+  detail    Json?
+  createdAt DateTime @default(now())
+}
+
+model PriceHistory {
+  id Int @id @default(autoincrement())
+  listingId Int
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  price Int
+  createdAt DateTime @default(now())
+  @@index([listingId, createdAt])
+}
+
+model SavedSearch {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name String
+  filters Json
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  matches SavedSearchMatch[]
+  @@index([userId])
+}
+
+model SavedSearchMatch {
+  searchId Int
+  listingId Int
+  search SavedSearch @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([searchId, listingId])
+}
