@@ -1,104 +1,162 @@
-# Nola2Hand Backend
+# Nola2Hand
 
-Giao diện đã nâng cấp đồng bộ cho mua sắm, tài khoản, seller và admin. Chạy `npm run dev`, mở `http://localhost:4000` và nhấn `Ctrl + Shift + R`. Hướng thiết kế, nguồn tham khảo và phạm vi kiểm tra: [THIET_KE_GIAO_DIEN.md](THIET_KE_GIAO_DIEN.md).
+Sàn thương mại điện tử **đồ cũ** — người mua và người bán giao dịch trực tiếp với nhau, tiền được giữ trong ví ký quỹ (SafePay) cho tới khi đơn hoàn tất, và hai nhóm admin riêng xử lý nội dung với dòng tiền.
 
-REST API cho sàn thương mại điện tử đồ cũ **Nola2Hand** (đồ án TMDT – Nhóm 2).
-Stack: **Node.js + Express + Prisma + PostgreSQL + JWT**.
+Điểm khác biệt so với một trang rao vặt thông thường:
 
-Phân quyền 4 vai trò: `BUYER` (người mua) · `SELLER` (người bán) · `ADMIN_FINANCE` (admin tài chính) · `ADMIN_CONTENT` (admin nội dung).
+- **Ký quỹ theo từng đơn**, không chỉ là số dư hiển thị: tiền đặt cọc bị giữ ở trạng thái `HELD`, chỉ giải ngân cho người bán khi người mua xác nhận đã nhận hàng, hoặc hoàn lại khi có tranh chấp/trả hàng.
+- **Hai nhánh admin tách quyền**: admin nội dung duyệt tin, xử lý báo cáo; admin tài chính đối soát dòng tiền, duyệt rút tiền, hoàn tiền. Không một tài khoản nào làm được cả hai việc.
+- **Mọi thay đổi tiền đều có chứng từ và nhật ký** để đối soát lại về sau.
 
-## 1. Cài đặt
+## Chức năng chính
 
-Đợt 15/10/2026 đã hoàn thành 5 sửa lỗi ưu tiên và 3 tính năng mới. Xem phạm vi, đường dẫn màn hình và bằng chứng kiểm thử tại [TIEN_DO_DOT_2.md](TIEN_DO_DOT_2.md).
+**Người mua**
+
+- Tìm kiếm, lọc theo danh mục, khu vực, tình trạng, giao nhận, mức độ xác minh người bán
+- Xem tin, xem gian hàng, so sánh tin, giỏ hàng, theo dõi tin
+- **Trả giá** có thời hạn (mặc định 24 giờ) — người bán đồng ý thì tạo đơn
+- Đặt cọc và thanh toán phần còn lại qua ví, hoặc xác nhận trả tiền mặt khi nhận hàng
+- Xác nhận đã nhận hàng để giải ngân, yêu cầu trả hàng trong 7 ngày, mở tranh chấp
+- Chat với người bán, đánh giá sau đơn, lưu tìm kiếm để nhận thông báo khi có tin phù hợp
+
+**Người bán**
+
+- Đăng tin có ảnh, thuộc tính theo danh mục; tin phải qua duyệt mới hiển thị
+- Sửa tin đã đăng (bị đưa về chờ duyệt lại); tin đang giữ hàng hoặc đã bán thì không sửa/xoá được
+- Quản lý hộp thư trả giá, đơn hàng, trả hàng, gian hàng, bài viết chia sẻ kinh nghiệm
+- Ví, yêu cầu rút tiền, biểu đồ thu nhập ròng, thống kê đánh giá
+
+**Admin nội dung**
+
+- Duyệt/từ chối tin và bài viết kèm lý do, xem ảnh bằng chứng
+- Xử lý báo cáo vi phạm, khoá/mở tài khoản, chat hỗ trợ
+- Quản lý danh mục, banner, khuyến mãi, nhật ký quản trị
+
+**Admin tài chính**
+
+- Đối soát phí sàn đã thu, dòng tiền ký quỹ, tình hình ví
+- Duyệt rút tiền và ghi nhận chứng từ chuyển khoản
+- Xử lý tranh chấp và hoàn tiền trả hàng
+- Phân quyền người dùng; không tự sửa vai trò của chính mình và không thể xoá người quản lý cuối cùng
+
+## Luồng nghiệp vụ điển hình
+
+```
+Đăng tin → chờ duyệt → đang bán
+Trả giá (24h) → người bán đồng ý → đơn chờ đặt cọc
+Đặt cọc (tối thiểu 10% tổng tiền) → tiền vào ký quỹ HELD
+Người bán xác nhận → giao hàng → người mua xác nhận đã nhận
+→ giải ngân cho người bán, trừ phí sàn
+Tranh chấp → admin tài chính hoàn tiền hoặc từ chối
+```
+
+Đơn mới giữ hàng 30 phút để chờ đặt cọc; hết hạn thì tự huỷ và nhả hàng.
+
+## Kiến trúc và công nghệ
+
+| Lớp | Dùng gì |
+|---|---|
+| Backend | Node.js (CommonJS) + Express 4 |
+| Cơ sở dữ liệu | PostgreSQL qua Prisma 5 (migration + seed) |
+| Xác thực | JWT, mật khẩu băm bằng bcrypt, đăng nhập Google tuỳ chọn |
+| Kiểm tra dữ liệu | zod ở tầng route |
+| Bảo mật | helmet, express-rate-limit (chặt hơn ở `/auth`), CORS |
+| Frontend | HTML/CSS/JavaScript thuần, không framework và không có bước build; Express phục vụ tĩnh cùng cổng |
+| Tích hợp tuỳ chọn | Resend (email), Google Identity, OpenAI Responses API |
+
+Backend và frontend chạy **cùng một tiến trình**: mở `http://localhost:4000` là vào giao diện, API nằm dưới `/api/v1`.
+
+## Cấu trúc thư mục
+
+```
+src/
+  app.js            khởi tạo Express, mount route, phục vụ frontend tĩnh
+  middleware.js     xác thực JWT, phân quyền, validate, xử lý lỗi
+  prisma.js         Prisma client dùng chung
+  utils.js          phân trang, phí sàn, ký quỹ, ví, thông báo
+  routes/           mỗi module nghiệp vụ một file (listings, orders, escrow,
+                    wallet, disputes, returns, seller, finance, admin-users, …)
+  services/         logic dùng chung: ký quỹ, giữ chỗ hàng, hoàn tiền, rút tiền,
+                    uy tín người bán, email, tìm kiếm, AI
+prisma/
+  schema.prisma     toàn bộ mô hình dữ liệu
+  migrations/       lịch sử migration
+  seed.js           dữ liệu mẫu để chạy thử
+frontend/           giao diện tĩnh (index.html, app.js, marketplace.js, CSS)
+test/               test tích hợp chạy bằng node --test
+scripts/            script kiểm tra luồng nghiệp vụ end-to-end
+uploads/            ảnh người dùng tải lên (không commit)
+```
+
+## Cài đặt và chạy
+
+Yêu cầu: Node.js 18 trở lên và một cơ sở dữ liệu PostgreSQL.
 
 ```bash
-# 1. Cài dependencies
+# 1. Cài phụ thuộc
 npm install
 
-# 2. Tạo database PostgreSQL rồi copy env
+# 2. Tạo database và file cấu hình
 createdb nola2hand
 cp .env.example .env
-# -> sửa DATABASE_URL và JWT_SECRET trong .env
+# mở .env, sửa DATABASE_URL và JWT_SECRET
 
-# 3. Migrate + seed dữ liệu demo (khớp với màn hình Figma)
+# 3. Tạo bảng và dữ liệu mẫu
 npx prisma migrate deploy
 npx prisma generate
 npm run prisma:seed
 
 # 4. Chạy
-npm run dev   # mở http://localhost:4000 → giao diện web; API ở /api/v1
+npm run dev      # http://localhost:4000
 ```
 
-Tài khoản demo (mật khẩu chung: `123456`):
+Lệnh khác:
 
-| Email | Vai trò |
+| Lệnh | Việc |
 |---|---|
-| `buyer@nola2hand.vn` | Người mua (Nguyễn Văn Tuấn) |
-| `seller@nola2hand.vn` | Người bán (Trần Thái Hòa) |
-| `finance@nola2hand.vn` | Admin tài chính |
-| `content@nola2hand.vn` | Admin nội dung |
+| `npm start` | Chạy không kèm nodemon |
+| `npm test` | Test tích hợp (`node --test test/*.test.cjs`) |
+| `npm run schema:check` | Kiểm tra và sinh Prisma client |
+| `npm run prisma:seed` | Nạp lại dữ liệu mẫu |
+| `npx prisma studio` | Xem/sửa dữ liệu bằng giao diện |
 
-## 2. Cấu trúc
+## Cấu hình
 
-```
-prisma/
-  schema.prisma   # toàn bộ data model
-  seed.js         # dữ liệu demo
-src/
-  app.js          # khởi tạo Express, mount routes
-  prisma.js       # Prisma client singleton
-  middleware.js   # auth (JWT), requireRole, validate (zod), errorHandler
-  utils.js        # phân trang, tính phí sàn, escrow, ví, thông báo
-  routes/         # 1 file / 1 module nghiệp vụ
-    auth.js users.js categories.js listings.js offers.js
-    orders.js escrow.js wallet.js reviews.js posts.js
-    promos.js banners.js reports.js disputes.js
-    finance.js admin-users.js seller.js chat.js notifications.js upload.js
-API.md            # tài liệu chi tiết từng endpoint
-```
+Chỉ hai biến là bắt buộc: `DATABASE_URL` và `JWT_SECRET`. Các biến còn lại đều có mặc định an toàn cho phát triển cục bộ.
 
-## 3. Luồng nghiệp vụ chính
+| Biến | Bắt buộc | Ghi chú |
+|---|---|---|
+| `DATABASE_URL` | có | Chuỗi kết nối PostgreSQL |
+| `JWT_SECRET` | có | Khoá ký token, phải đổi khi triển khai thật |
+| `JWT_EXPIRES_IN` | không | Mặc định `7d` |
+| `PORT` | không | Mặc định `4000` |
+| `APP_URL` | không | Địa chỉ công khai, dùng cho link trong email và ảnh tải lên |
+| `RESEND_API_KEY`, `MAIL_FROM` | không | Thiếu thì thư được ghi ra `.local/mail/` thay vì gửi thật |
+| `GOOGLE_CLIENT_ID` | không | Bật đăng nhập Google; frontend đọc cấu hình qua `/api/v1/auth/config` |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | không | Bật trợ lý tìm kiếm; thiếu thì dùng quy tắc cục bộ |
+| `AI_REVIEW_ANALYSIS` | không | Đặt `true` mới gửi nội dung đánh giá tới OpenAI để phân tích cảm xúc |
 
-```
-Đăng tin (PENDING_REVIEW) → Admin duyệt → ACTIVE
-Trả giá (24h) → Seller đồng ý → Tạo đơn (PENDING_DEPOSIT)
-Đặt cọc SafePay (tối thiểu 10%) → tiền vào ký quỹ HELD
-Seller xác nhận → giao hàng → Buyer xác nhận đã nhận
-→ escrow RELEASED → seller nhận tiền (trừ phí sàn)
-Tranh chấp → admin tài chính hoàn tiền / từ chối
-```
+## Ghi chú phát triển
 
-## 4. Ghi chú khi demo / phát triển tiếp
+- **Chat dùng polling**, chưa phải realtime. Muốn realtime thì gắn WebSocket.
+- **Nạp tiền trực tiếp chỉ có ở môi trường phát triển** để tiện thử nghiệm. Cổng thanh toán (MoMo, VietQR) cần payment link và webhook xác minh trước khi bật.
+- **Rút tiền chưa nối ngân hàng tự động**: admin duyệt rồi ghi nhận chứng từ chuyển khoản.
+- Giữ lại thư mục `uploads/` (ảnh công khai) và `.local/` (ảnh bằng chứng riêng tư, thư nháp) khi triển khai.
+- Ảnh bằng chứng dùng trong tranh chấp được lưu riêng và chỉ người liên quan cùng admin tài chính xem được.
+- File `.env` đã được bỏ qua trong git, không commit khoá bí mật.
 
-- Upload ảnh (`POST /upload`) lưu JPEG/PNG/WebP thật trong `uploads/`, tối đa 5MB/ảnh. Giữ thư mục này khi triển khai và đặt `APP_URL` đúng địa chỉ website.
-- Nạp tiền trực tiếp chỉ có ở môi trường development để demo. Đặt cọc hiện chỉ nhận từ ví SafePay; tích hợp MoMo/VietQR cần payment link + webhook xác minh trước khi bật lại.
-- Chat đang dùng **polling** (`GET /chat/with/:userId`) — muốn realtime thì gắn Socket.IO.
-- Chạy `npx prisma studio` để xem/sửa dữ liệu trực quan.
+## Tài liệu
 
-## 5. Tính năng bổ sung và cấu hình
+| File | Nội dung |
+|---|---|
+| [API.md](API.md) | Danh sách endpoint, tham số, quyền yêu cầu |
+| [THIET_KE_GIAO_DIEN.md](THIET_KE_GIAO_DIEN.md) | Hướng thiết kế giao diện và nguồn tham khảo |
+| [TIEN_DO_HOAN_THIEN.md](TIEN_DO_HOAN_THIEN.md) | Phạm vi hoàn thiện và phạm vi kiểm tra |
+| [TIEN_DO_DOT_2.md](TIEN_DO_DOT_2.md) | Thay đổi theo từng đợt |
+| [BAO_CAO_RA_SOAT.md](BAO_CAO_RA_SOAT.md) | Báo cáo rà soát lỗi và bảo mật |
+| [DE_XUAT_CAI_THIEN.md](DE_XUAT_CAI_THIEN.md) | Đề xuất cải thiện tiếp |
+| [NGHIEN_CUU_TINH_NANG_MOI.md](NGHIEN_CUU_TINH_NANG_MOI.md) | Nghiên cứu tính năng mới |
 
-Các trang danh mục có URL riêng (`#/category/dien-tu-cu`, `#/category/noi-that`, `#/category/do-gia-dung`), bộ lọc địa điểm/giao nhận/xác minh, thẻ gỡ lọc và nhớ vị trí cuộn khi quay lại. Chi tiết tin có thông số tình trạng theo danh mục và tối đa 300 lần đổi giá gần nhất.
+## Giấy phép
 
-Kênh seller có sửa/xem trước tin, inbox trả giá, phân trang tin/đơn và phân tích đánh giá. Sửa tin gửi duyệt lại; tin đang được giữ hoặc đã bán không thể sửa/xóa. Admin có tìm kiếm/phân trang, ảnh bằng chứng, lý do xử lý và nhật ký quản trị.
-
-Đơn mới giữ món 30 phút chờ cọc. Tiến trình server kiểm tra hết hạn mỗi 60 giây và khi tạo đơn mới. Cọc mặc định 20%, tối thiểu 10% **tổng tiền gồm giảm giá và giao hàng**. Người mua trả phần còn lại qua ví hoặc người bán xác nhận thu COD sau khi giao; người mua xác nhận hoàn tất trước khi giải ngân. Ví chỉ ghi tiền thật đã giữ trong escrow; COD ngoài ví không được cộng lại. Dashboard/biểu đồ seller dùng thu ròng ví; admin tài chính dùng phí sàn đã thu; ngày biểu đồ tính theo UTC.
-
-1. Email: đặt `RESEND_API_KEY`, `MAIL_FROM` và `APP_URL` trong `.env`. Domain gửi cần được xác minh với [Resend](https://resend.com/docs/api-reference/emails/send-email). Khi development chưa cấu hình, thư chứa link một lần nằm trong `.local/mail/`, không gửi tới hộp thư thật. Production yêu cầu cấu hình email thật.
-2. Google: đặt `GOOGLE_CLIENT_ID` ở backend, thêm origin của website vào OAuth Client. Frontend đọc cấu hình công khai từ `/auth/config`.
-3. AI: đặt `OPENAI_API_KEY` và `OPENAI_MODEL` hỗ trợ [Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create). Bật `AI_REVIEW_ANALYSIS=true` nếu muốn gửi nội dung/điểm đánh giá tới OpenAI. Không bật thì dùng quy tắc cục bộ, giữ nguyên nhận xét gốc.
-4. Theo dõi tìm kiếm: đăng nhập, chọn “Theo dõi tìm kiếm này” tại danh mục. Tối đa 20 tìm kiếm; thông báo trong ứng dụng khi tin phù hợp được duyệt. Tin đã có lúc lưu không được báo lại.
-5. Kiểm tra: `npm test` và `npx prisma validate`. Xem phạm vi kiểm tra thực tế trong `TIEN_DO_HOAN_THIEN.md`.
-
-Nếu migration lỗi `must be owner of table`, sửa owner bằng tài khoản PostgreSQL quản trị trước khi dùng `migrate resolve --rolled-back` và chạy lại `migrate deploy`. Không dùng `migrate reset` để xử lý database đang có dữ liệu.
-
-## 6. Trả hàng, rút tiền và bảo mật
-
-Trả hàng trong 7 ngày từ khi giao: buyer yêu cầu → seller/admin duyệt → buyer gửi trả → seller/admin nhận lại → admin tài chính hoàn SafePay. Đơn tạm dừng giải ngân trong tiến trình. Nếu đã giải ngân, seller phải có đủ số dư cho toàn bộ khoản hoàn; phí sàn đã thu không tự hoàn. COD hoàn ngoài ví phải được seller ghi chứng từ và buyer xác nhận thực nhận, không được cộng giả vào ví. Mỗi đơn có một yêu cầu trả hàng; không dùng song song với tranh chấp.
-
-Rút tiền dùng mã UUID để retry không giữ hai lần. Tiền và phí chuyển sang số dư đang giữ; admin duyệt rồi ghi nhận chứng từ chuyển khoản, lúc đó mới ghi giao dịch thành công. Từ chối/hủy/chuyển thất bại trả lại khoản giữ. Admin không xử lý yêu cầu của chính mình; chưa kết nối chuyển ngân hàng tự động.
-
-Phân quyền cần `canManageRoles` và ADMIN_FINANCE, không cho sửa role của chính mình hoặc loại bỏ người quản lý cuối cùng. Migration/seed cấp quyền này cho tài khoản finance demo. Đổi/reset mật khẩu, đăng xuất, đổi role hoặc khóa tài khoản thu hồi phiên cũ. Tạo đơn/đăng tin yêu cầu xác nhận email hoặc danh tính; mỗi buyer tối đa 3 đơn chờ cọc. Chat có chặn/bỏ chặn, hạn mức theo tài khoản được ghi trong API.md.
-
-Ảnh sản phẩm vẫn công khai trong `uploads/`. Ảnh upload từ màn bằng chứng dùng `purpose=EVIDENCE`, lưu riêng tại `.local/evidence/`; chỉ chủ ảnh, bên tham gia đơn/tranh chấp đã đính kèm và admin tài chính được xem. Giữ cả hai thư mục khi triển khai. Ảnh công khai cũ/URL ngoài chưa được chuyển thành riêng tư.
-
-Kiểm tra cục bộ: `npm test`, `npm run schema:check`, `npx prisma migrate status`. Tích hợp chủ động: chạy server development rồi `npm run test:phase3`; yêu cầu tài khoản seed demo và email LOCAL_OUTBOX. Script tạo dữ liệu QA, giữ lịch sử tiền/audit, khóa tài khoản thử và xóa mềm tin thử sau chạy; không chạy trên dữ liệu production. Không cần reseed database hiện có để nhận các thay đổi.
+MIT.
